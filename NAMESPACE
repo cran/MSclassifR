@@ -1,0 +1,49 @@
+exportPattern("^[[:alpha:]]+")
+importFrom("MALDIquant",
+           "calibrateIntensity",
+           "transformIntensity",
+           "alignSpectra",
+           "removeEmptyMassObjects",
+           "averageMassSpectra",
+           "detectPeaks",
+           "determineWarpingFunctions",
+           "warpMassPeaks")
+importFrom("MALDIrppa",
+           "wavSmoothing",
+           "alignPeaks")
+importFrom("MALDIquantForeign",
+           "importBrukerFlex")
+importFrom("stats",
+           "aggregate",
+           "predict",
+           "sd")
+importFrom("ggplot2",
+           "ggplot",
+           "aes",
+           "geom_boxplot",
+           "facet_wrap",
+           "theme_bw",
+           "xlab")
+importFrom("mixOmics",
+           "splsda",
+           "color.mixo",
+           "plotLoadings")
+importFrom("caret",
+           "createDataPartition",
+           "confusionMatrix",
+           "trainControl",
+           "train",
+           "rfe",
+           "rfeControl",
+           "rfFuncs")
+importFrom("reshape2","melt")
+importFrom("nnet", "nnet")
+importFrom("dplyr", "inner_join")
+importFrom("fuzzyjoin", "distance_left_join")
+importFrom("stats", "predict")
+importFrom("VSURF", "VSURF")
+importFrom("xgboost","xgb.DMatrix","xgb.train")
+importFrom("e1071","svm")
+importFrom("metap","sumlog")
+
+
