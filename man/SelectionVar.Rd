@@ -79,9 +79,9 @@ Kim-Anh Le Cao, Florian Rohart, Ignacio Gonzalez, Sebastien Dejean with key cont
 }
 
 \seealso{
-
-\bold{Vignette MSclassifR :}
-\url{https://agodmer.github.io/StageDubii2021/Package_MSclassifR-in-progress/MSclassifR/vignettes/Vignette-MSclassifR.html}
+\bold{Vignettes MSclassifR :}
+\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Ecrobia.html}
+\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Klebsiella.html}
 }
 
 \examples{
@@ -147,32 +147,24 @@ PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],
 Peaks2=b$sel_moz,col_spec="blue",col_peak="black")
 
 ## 4. Perform variables selection unsing sPLDA method (with 5 to 10 variables per components)
-c <- SelectionVar(X,
-                  Y,
-                  MethodSelection = c("sPLSDA"),
-                  MethodValidation = c("LOOCV"),
-                  PreProcessing = c("scale","nzv"),
-                  NumberCV = 2,
-                  Sizes = c(5:10))
+#c <- SelectionVar(X,
+#                  Y,
+#                  MethodSelection = c("sPLSDA"),
+#                  MethodValidation = c("LOOCV"),
+#                  PreProcessing = c("scale","nzv"),
+#                  Sizes = c(5:10))
                   
 # Plotting peaks on the first pre-processed mass spectrum and highlighting the 
 # discriminant mass-over-charge values with red lines
-PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],
-Peaks2=c$sel_moz,col_spec="blue",col_peak="black")
+#PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],
+#Peaks2=c$sel_moz,col_spec="blue",col_peak="black")
 
 ## 5. Perform variables selection using SelectionVar with RFE and logistic 
 ## regression (with 5 to 10 variables per components)
   ## This function can last a few minutes
 
-  d <- SelectionVar(X,
-                   Y,
-                   MethodSelection = c("VSURF"),
-                   MethodValidation = c("cv"),
-                   PreProcessing = c("scale","nzv"),
-                   NumberCV = 2,
-                   Sizes = c(5:10))
-
-  summary(d)
+  d <- SelectionVar(X, Y, MethodSelection = c("VSURF"))
+  summary(d$result)
 
 }
 

@@ -50,8 +50,9 @@ Javier Palarea-Albaladejo, Kevin Mclean, Frank Wright, David G E Smith, MALDIrpp
 }
 
 \seealso{
-\bold{Vignette MSclassifR :}
-\url{https://agodmer.github.io/StageDubii2021/Package_MSclassifR-in-progress/MSclassifR/vignettes/Vignette-MSclassifR.html}
+\bold{Vignettes MSclassifR :}
+\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Ecrobia.html}
+\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Klebsiella.html}
 }
 
 \examples{

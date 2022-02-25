@@ -79,14 +79,14 @@ Y <- factor(CitrobacterRKImetadata$Species)
 ## 2. Selection of discriminant mass-over-charge values using sPLS-DA
 
 
-c <- SelectionVar(X,
+a <- SelectionVar(X,
                   Y,
-                  MethodSelection = c("sPLSDA"),
-                  MethodValidation = c("LOOCV"),
-                  PreProcessing = c("scale","nzv"),
+                  MethodSelection = c("RFERF"),
+                  MethodValidation = c("cv"),
+                  PreProcessing = c("center","scale","nzv","corr"),
                   NumberCV = 2,
-                  Sizes = c(5:20))
-sel_moz=c$sel_moz
+                  Sizes = c(5:10))
+sel_moz=a$sel_moz
 
 ##########################################################################
 ## 3. Perform LogReg from shortlisted discriminant mass-over-charge values

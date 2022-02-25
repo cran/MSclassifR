@@ -20,7 +20,7 @@ PeakDetection <- function(x,
 
   ## Peaks alignment and bin  =================================
   # Alignment peaks
-  peaks <- MALDIrppa::alignPeaks(peaks, minFreq = 0.20, tolerance = Tolerance)
+  peaks <- MALDIrppa::alignPeaks(peaks, minFreq = AlignFrequency, tolerance = Tolerance)
   # Collect peaks
   peaks <- MALDIquant::binPeaks(peaks, method=c("strict"), tolerance = Tolerance)
 

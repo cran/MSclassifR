@@ -2,7 +2,7 @@
 
 \alias{SignalProcessing}
 
-\title{SignalProcessing}
+\title{Function performing post acquisition signal processing}
 
 \description{
 This function performs post acquisition signal processing for \code{list} of \code{MassSpectrum} objects using commonly used methods : transform intensities ("sqrt"), smoothing ("Wavelet"), remove baseline ("SNIP"), calibrate intensities ("TIC") and align spectra. Methods used are selected from the \code{MALDIquant} and \code{MALDIrppa} R packages.
@@ -63,8 +63,9 @@ All the methods used for \code{SpectralTreatment} functions are selected from \c
 }
 
 \seealso{
-\bold{Vignette MSclassifR :}
-\url{https://agodmer.github.io/StageDubii2021/Package_MSclassifR-in-progress/MSclassifR/vignettes/Vignette-MSclassifR.html}
+\bold{Vignettes MSclassifR :}
+\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Ecrobia.html}
+\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Klebsiella.html}
 }
 
 \examples{

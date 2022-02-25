@@ -64,14 +64,14 @@ Y <- factor(CitrobacterRKImetadata$Species)
 #####################################################################
 ## 2. Selection of discriminant mass-over-charge values using sPLS-DA
 
-c <- SelectionVar(X,
+a <- SelectionVar(X,
                   Y,
-                  MethodSelection = c("sPLSDA"),
-                  MethodValidation = c("LOOCV"),
-                  PreProcessing = c("scale","nzv"),
+                  MethodSelection = c("RFERF"),
+                  MethodValidation = c("cv"),
+                  PreProcessing = c("center","scale","nzv","corr"),
                   NumberCV = 2,
-                  Sizes = c(5:20))
-sel_moz=c$sel_moz
+                  Sizes = c(5:10))
+sel_moz=a$sel_moz
 
 ##########################################################################
 ## 3. Perform LogReg from shortlisted discriminant mass-over-charge values 
@@ -103,7 +103,7 @@ model_svm
 #Of note, you can also load a model already saved (see example in LogReg function)
 
 ## Probabilities of belonging to each category for the mass spectra
-prob_cat=MSclassifR::Predict_LogReg(peaks = peaks[c(1:3)],
+prob_cat=MSclassifR::Predict_LogReg(peaks = peaks[c(5:7)],
 model = list(model_lm$train_mod,model_nn$train_mod,model_rf$train_mod,
 model_xgb$train_mod,model_svm$train_mod),
 moz = sel_moz)

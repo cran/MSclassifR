@@ -36,6 +36,7 @@ importFrom("caret",
            "rfe",
            "rfeControl",
            "rfFuncs")
+importFrom("glmnet","glmnet")
 importFrom("reshape2","melt")
 importFrom("nnet", "nnet")
 importFrom("dplyr", "inner_join")
