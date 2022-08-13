@@ -13,8 +13,8 @@ PeakDetection(x,
               labels,
               averageMassSpectraMethod = "median",
               SNRdetection = 3,
+              PeakDetectionMethod = "MAD",
               halfWindowSizeDetection = 11,
-              AlignFrequency = 0.20,
               AlignMethod = "strict",
               Tolerance = 0.002,
               ...)
@@ -26,17 +26,17 @@ PeakDetection(x,
 
   \item{labels}{a \code{list} of \code{factor} objects to do groupwise averaging.}
 
-  \item{averageMassSpectraMethod}{a \code{character} indicating the method used to average mass spectra according to labels. It is fixed to \code{"median"} by default. See \code{averageMassSpectra} of \code{MALDIquant} R package.}
+  \item{averageMassSpectraMethod}{a \code{character} indicating the method used to average mass spectra according to labels. It is fixed to \code{"median"} by default.This function can be replaced by another mathematical function such as \code{"mean"}. See \code{averageMassSpectra} of \code{MALDIquant} R package.}
 
+  \item{PeakDetectionMethod}{a \code{character} indicating the noise estimation method. It uses \code{"MAD"} method for \code{list} of \code{MassSpectrum} objects. This noise estimation method estimation method can be remplaced \code{"SuperSmoother"}. See \code{estimateNoise-methods} of the \code{MALDIquant} R package for details.}
+  
   \item{SNRdetection}{a \code{numeric} value indicating the signal-to-noise ratio used to detect peaks (by default = {\code{3}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
   \item{halfWindowSizeDetection}{a \code{numeric} value half window size to detect peaks (by default = {\code{11}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
-  \item{AlignFrequency}{a \code{numeric} value used to align and bin mass spectra using minimum relative frequency. See \code{alignPeaks} of the \code{MALDIrppa} R package for more details.}
+  \item{AlignMethod}{a \code{character} indicating the method used to equalize masses for similar peaks. The \code{"strict"} method is used by default corresponding to a unique peak per bin from the same sample. This method can be remplaced by \code{"relaxed"} corresponding to multiple peaks per bin from the same sample. See \code{binPeaks} of the \code{MALDIquant} R package for more details.}
 
-  \item{AlignMethod}{a \code{character} indicating the method used to equalize masses for similar peaks. The {\code{strict}} method is used by default. See \code{binPeaks} of the \code{MALDIquant} R package for more details.}
-
-  \item{Tolerance}{a \code{numeric} value corresponding to the maximal deviation in peak masses to be considered as identical (by default = {\code{0.002}}). See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
+  \item{Tolerance}{a \code{numeric} value corresponding to the maximal deviation in peak masses to be considered as identical in ppm (by default = {\code{0.002}}). See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
 
   \item{...}{other arguments from \code{MALDIquant} and \code{MALDIrppa} packages.}
 }
@@ -49,11 +49,12 @@ Gibb S, Strimmer K. MALDIquant: a versatile R package for the analysis of mass s
 Javier Palarea-Albaladejo, Kevin Mclean, Frank Wright, David G E Smith, MALDIrppa: quality control and robust analysis for mass spectrometry data, Bioinformatics, Volume 34, Issue 3, 01 February 2018, Pages 522 - 523, \doi{https://doi.org/10.1093/bioinformatics/btx628}
 }
 
-\seealso{
-\bold{Vignettes MSclassifR :}
-\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Ecrobia.html}
-\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Klebsiella.html}
+\details{
+The \code{PeakDetection} function provides an analysis pipeline for \code{MassSpectrum} objects including peaks detection and binning.
+
+All the methods used for \code{PeakDetection} functions are selected from \code{MALDIquant} and \code{MALDIrppa} packages.
 }
+
 
 \examples{
 library("MALDIquant")
@@ -81,3 +82,4 @@ peaks <- PeakDetection(x = spectra,
 PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],col_spec="blue",col_peak="black")
 }
 
+\keyword{Preprocessing}

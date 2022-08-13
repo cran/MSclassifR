@@ -16,8 +16,11 @@ SignalProcessing(x,
                  removeBaseline_method = "SNIP",
                  removeBaseline_iterations = 25,
                  calibrateIntensity_method = "TIC",
+                 alignSpectra_NoiseMethod = "MAD",
+                 alignSpectra_method = "lowess",
                  alignSpectra_halfWs = 11,
                  alignSpectra_SN = 3,
+                 referenceSpectra,
                  tolerance_align = 0.002,
                  ...)
 }
@@ -25,23 +28,29 @@ SignalProcessing(x,
 \arguments{
   \item{x}{a \code{list} of \code{MassSpectrum} objects (see \code{MALDIquant} R package).}
 
-  \item{transformIntensity_method}{a \code{character} indicating the method used to transform intensities: \code{"sqrt"} by default.}
+  \item{transformIntensity_method}{a \code{character} indicating the method used to transform intensities: \code{"sqrt"} by default. This function can be replaced by another mathematical function such as \code{"log"}.}
 
-  \item{smoothing_method}{a \code{character} indicating the smoothing methods used. By default, it performs undecimated \code{Wavelet} transform (UDWT) for \code{list} of \code{MassSpectrum} objects. See \code{wavSmoothing} in the \code{MALDIrppa} R package for details.}
+  \item{smoothing_method}{a \code{character} indicating the smoothing methods used. By default, it performs undecimated \code{Wavelet} transform (UDWT) for \code{list} of \code{MassSpectrum} objects. This Smoothing method can be remplaced by \code{"SavitzkyGolay"} or \code{"MovingAverage"}. See \code{wavSmoothing} in the \code{MALDIrppa} R package for details.}
 
-  \item{removeBaseline_method}{a \code{character} indicating the method used to remove baseline. It uses \code{"SNIP"} method for \code{list} of \code{MassSpectrum} objects. See \code{removeBaseline-methods} of the \code{MALDIquant} R package for details.}
+  \item{removeBaseline_method}{a \code{character} indicating the method used to remove baseline. It uses \code{"SNIP"} method for \code{list} of \code{MassSpectrum} objects. This baseline estimation method can be remplaced \code{"TopHat"}, \code{"ConvexHull"} or \code{"median"}. See \code{removeBaseline-methods} of the \code{MALDIquant} R package for details.}
 
   \item{removeBaseline_iterations}{a \code{numeric} value indicting the number of iterations to remove baseline (by default = {\code{25}}). See \code{removeBaseline-methods} of the \code{MALDIquant} R package for details.}
 
-  \item{calibrateIntensity_method}{a \code{character} indicating the intensities calibration method used (\code{"TIC"} method by default). See \code{calibrateIntensity-methods} of the \code{MALDIquant} R package for details.}
+  \item{calibrateIntensity_method}{a \code{character} indicating the intensities calibration method used (\code{"TIC"} method by default).  This calibration method can be remplaced by \code{"PQN"} or {"median"}.See \code{calibrateIntensity-methods} of the \code{MALDIquant} R package for details.}
 
+   \item{alignSpectra_NoiseMethod}{a \code{character} indicating the noise estimation method. It uses \code{"MAD"} method for \code{list} of \code{MassSpectrum} objects. This noise estimation method estimation method can be remplaced \code{"SuperSmoother"}. See \code{estimateNoise-methods} of the \code{MALDIquant} R package for details.}
+  
+  \item{alignSpectra_method}{a \code{character} indicating the warping method. It uses \code{"lowess"} method for \code{list} of \code{MassSpectrum} objects. This warping method method can be remplaced \code{"linear"}, \code{"quadratic"} or \code{"cubic"} . See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
+  
   \item{alignSpectra_halfWs}{a \code{numeric} value half window size to detect peaks (by default = {\code{11}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
   \item{alignSpectra_SN}{a \code{numeric} value indicating the signal-to-noise ratio used to detect peaks (by default = {\code{3}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
-  \item{tolerance_align}{a \code{numeric} value indicating a maximal relative deviation of a peak position (mass) to be considered as identical (by default = \code{0.002}). See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
+  \item{referenceSpectra}{a \code{MassPeaks} reference object for alignment of the sample. See \code{referencePeaks} of the \code{MALDIquant} R package for details.}
 
-  \item{...}{other arguments from \code{MALDIquant} and \code{MALDIrppa} packages.}
+  \item{tolerance_align}{a \code{numeric} value indicating a maximal relative deviation of a peak position (mass) to be considered as identical in ppm (by default = \code{0.002}). See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
+
+  \item{...}{other arguments from \code{MALDIrppa} packages for the \code{wavSmoothing} function such as \code{n.levels} (corresponding to the depth of the decomposiion for the wavelet function). See \code{wavSmoothing} of the \code{MALDIrppa} R package for details.}
 
 }
 
@@ -57,16 +66,14 @@ Javier Palarea-Albaladejo, Kevin Mclean, Frank Wright, David G E Smith, MALDIrpp
 
 
 \details{
+
+The \code{SignalProcessing} function provides an analysis pipeline for \code{MassSpectrum} objects including intensity transformation, smoothing, removing baseline.
+
 The \code{Wavelet} method relies on the \code{wavShrink} function of the \code{wmtsa} package and its dependencies (now archived by CRAN). The original C code by William Constantine and Keith L. Davidson, in turn including copyrighted routines by Insightful Corp., has been revised and included into \code{MALDIrppa} for the method to work.
 
-All the methods used for \code{SpectralTreatment} functions are selected from \code{MALDIquant} and \code{MALDIrppa} packages.
+All the methods used for \code{SignalProcessing} functions are selected from \code{MALDIquant} and \code{MALDIrppa} packages.
 }
 
-\seealso{
-\bold{Vignettes MSclassifR :}
-\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Ecrobia.html}
-\url{https://agodmer.github.io/MSclassifR_examples/Vignettes/Vignettemsclassifr_Klebsiella.html}
-}
 
 \examples{
 
@@ -86,6 +93,7 @@ spectra <- SignalProcessing(CitrobacterRKIspectra,
                             removeBaseline_method = "SNIP",
                             removeBaseline_iterations = 25,
                             calibrateIntensity_method = "TIC",
+                            alignSpectra_Method = "MAD",
                             alignSpectra_halfWs = 11,
                             alignSpectra_SN = 3,
                             tolerance_align = 0.002)
@@ -95,6 +103,9 @@ spectra <- SignalProcessing(CitrobacterRKIspectra,
 PlotSpectra(SpectralData=spectra[[1]], col_spec="blue")
 
 }
+
+\keyword{Preprocessing}
+
 
 
 

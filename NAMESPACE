@@ -7,16 +7,24 @@ importFrom("MALDIquant",
            "averageMassSpectra",
            "detectPeaks",
            "determineWarpingFunctions",
-           "warpMassPeaks")
+           "warpMassPeaks",
+           "match.closest",
+           "intensityMatrix",
+           "createMassPeaks")
 importFrom("MALDIrppa",
-           "wavSmoothing",
-           "alignPeaks")
+           "wavSmoothing")
 importFrom("MALDIquantForeign",
            "importBrukerFlex")
 importFrom("stats",
            "aggregate",
            "predict",
-           "sd")
+           "sd",
+           "lm",
+           "AIC",
+           "pf",
+           "kruskal.test",
+           "na.omit",
+           "model.matrix")
 importFrom("ggplot2",
            "ggplot",
            "aes",
@@ -35,16 +43,33 @@ importFrom("caret",
            "train",
            "rfe",
            "rfeControl",
-           "rfFuncs")
+           "rfFuncs",
+           "upSample",
+           "downSample")
 importFrom("glmnet","glmnet")
-importFrom("reshape2","melt")
+importFrom("reshape2",
+           "melt")
 importFrom("nnet", "nnet")
 importFrom("dplyr", "inner_join")
 importFrom("fuzzyjoin", "distance_left_join")
-importFrom("stats", "predict")
 importFrom("VSURF", "VSURF")
-importFrom("xgboost","xgb.DMatrix","xgb.train")
-importFrom("e1071","svm")
-importFrom("metap","sumlog")
+importFrom("xgboost", 
+           "xgb.DMatrix",
+           "xgb.train")
+importFrom("e1071", "svm")
+importFrom("metap", "sumlog")
+importFrom("performanceEstimation", "smote")
+importFrom("mltools", "mcc")
+importFrom("mclust", "adjustedRandIndex")
+importFrom("UBL", "SmoteClassif")
+importFrom("car", "linearHypothesis")
+importFrom("limma",
+           "eBayes",
+           "contrasts.fit")
+importFrom("cp4p",
+           "adjust.p",
+           "estim.pi0")
+import("statmod")
+
 
 

@@ -37,4 +37,4 @@ The Robert Koch-Institute (RKI) database of microbial MALDI-TOF mass spectra con
 Lasch, Peter, Stammler, Maren, & Schneider, Andy. (2018). Version 3 (20181130) of the MALDI-TOF Mass Spectrometry Database for Identification and Classification of Highly Pathogenic Microorganisms from the Robert Koch-Institute (RKI) [Data set]. Zenodo.\doi{http://doi.org/10.5281/zenodo.163517}
 }
 
-\keyword{datasets}
+\keyword{Dataset}

@@ -4,8 +4,8 @@ PeakDetection <- function(x,
                           labels,
                           averageMassSpectraMethod = "median",
                           SNRdetection = 3,
+                          PeakDetectionMethod = "MAD",
                           halfWindowSizeDetection = 11,
-                          AlignFrequency = 0.20,
                           AlignMethod = "strict",
                           Tolerance = 0.002,
                           ...)
@@ -16,11 +16,11 @@ PeakDetection <- function(x,
   #  Average spectra
   avgSpectra <- MALDIquant::averageMassSpectra(x,labels = labels ,method = averageMassSpectraMethod )
   # Peak detection
-  peaks <- MALDIquant::detectPeaks(avgSpectra, SNR= SNRdetection, halfWindowSize = halfWindowSizeDetection)
+  peaks <- MALDIquant::detectPeaks(avgSpectra, SNR= SNRdetection, method = PeakDetectionMethod, halfWindowSize = halfWindowSizeDetection)
 
   ## Peaks alignment and bin  =================================
   # Alignment peaks
-  peaks <- MALDIrppa::alignPeaks(peaks, minFreq = AlignFrequency, tolerance = Tolerance)
+  #peaks <- MALDIrppa::alignPeaks(peaks, minFreq = AlignFrequency, tolerance = Tolerance)
   # Collect peaks
   peaks <- MALDIquant::binPeaks(peaks, method=c("strict"), tolerance = Tolerance)
 
