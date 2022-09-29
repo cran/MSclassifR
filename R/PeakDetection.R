@@ -22,7 +22,7 @@ PeakDetection <- function(x,
   # Alignment peaks
   #peaks <- MALDIrppa::alignPeaks(peaks, minFreq = AlignFrequency, tolerance = Tolerance)
   # Collect peaks
-  peaks <- MALDIquant::binPeaks(peaks, method=c("strict"), tolerance = Tolerance)
+  peaks <- MALDIquant::binPeaks(peaks, method = AlignMethod, tolerance = Tolerance)
 
   #renaming fullName using labels
   for (i in 1:length(peaks)){

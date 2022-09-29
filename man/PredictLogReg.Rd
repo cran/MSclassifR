@@ -199,11 +199,11 @@ Models <- list(model_lm$train_mod,
                model_svm$train_mod)
 
 # Predict classes of mass spectra with 6 Da of tolerance for matching peaks.
-prob_cat=MSclassifR:: PredictLogReg(peaks = peaks[c(1:5)],
-                                    model = Models,
-                                    moz = sel_moz,
-                                    tolerance = 6,
-                                    Reference = Y[c(1:5)])
+prob_cat=MSclassifR::PredictLogReg(peaks = peaks[c(1:5)],
+                                   model = Models,
+                                   moz = sel_moz,
+                                   tolerance = 6,
+                                   Reference = Y[c(1:5)])
 
 }
 }

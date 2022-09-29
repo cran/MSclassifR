@@ -54,8 +54,8 @@ LogReg(X,
 
 The estimation is performed using the \code{train} function of the \code{caret} R package. For each kind of model, random parameters are tested to find a model according to the best \code{metric}. The formulas for the \code{metric} are as follows:
 
-\deqn{Accuracy = Number of correct predictions/Total number of predictions}
-\deqn{Kappa coefficient = Observed agreement-chance agreement/1-chance agreement}
+\deqn{Accuracy = Number Of Correct Predictions/Total Number Of Predictions}
+\deqn{Kappa coefficient = Observed Agreement-Chance Agreement/1-Chance Agreement}
 \deqn{F1 = True Positive/(True Positive + 1/2 (False Positive + False Negative))}
 
 The adjusted Rand index (\code{"AdjRankIndex"}) is defined as the corrected-for-chance version of the Rand index which allows you to compare two groups, see \code{mclust} package and \code{adjustedRandIndex()} function for more details. The Matthews correlation coefficient (\code{"MatthewsCorrelation"}) which measures the association of two variables is calculated using \code{mcc} function in the \code{mltools} R package.

@@ -20,8 +20,11 @@ SignalProcessing(x,
                  alignSpectra_method = "lowess",
                  alignSpectra_halfWs = 11,
                  alignSpectra_SN = 3,
-                 referenceSpectra,
                  tolerance_align = 0.002,
+                 referenceSpectra = NULL,
+                 minFrequency= 0.5,
+                 binPeaks_method = "strict",
+                 keepReferenceSpectra = FALSE,
                  ...)
 }
 
@@ -45,16 +48,22 @@ SignalProcessing(x,
   \item{alignSpectra_halfWs}{a \code{numeric} value half window size to detect peaks (by default = {\code{11}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
   \item{alignSpectra_SN}{a \code{numeric} value indicating the signal-to-noise ratio used to detect peaks (by default = {\code{3}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
-
-  \item{referenceSpectra}{a \code{MassPeaks} reference object for alignment of the sample. See \code{referencePeaks} of the \code{MALDIquant} R package for details.}
-
+  
   \item{tolerance_align}{a \code{numeric} value indicating a maximal relative deviation of a peak position (mass) to be considered as identical in ppm (by default = \code{0.002}). See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
+
+  \item{referenceSpectra}{a \code{MassPeaks} reference spectrum for alignment of the sample(s). If this reference spectrum is not provided, a reference spectrum is created using the \code{minFrequency} and \code{binPeaks_method} arguments. See \code{referencePeaks} of the \code{MALDIquant} R package for details.}
+  
+  \item{minFrequency}{a \code{numeric} minimum frequency for each peak over all analyzed spectra (by default = \code{0.5}) for the creation of the reference spectrum. See \code{referencePeaks} of the \code{MALDIquant} R package for details.}
+  
+  \item{binPeaks_method}{a \code{character} indicating the method used to equalize masses for similar peaks for the creation of the reference spectrum. The \code{"strict"} method is used by default corresponding to a unique peak per bin from the same sample. This method can be remplaced by \code{"relaxed"} corresponding to multiple peaks per bin from the same sample. See \code{binPeaks} of the \code{MALDIquant} R package for more details.}
+  
+  \item{keepReferenceSpectra}{a \code{logical} value indicating if the created reference spectrum is returned by the function (\code{FALSE}, default).}
 
   \item{...}{other arguments from \code{MALDIrppa} packages for the \code{wavSmoothing} function such as \code{n.levels} (corresponding to the depth of the decomposiion for the wavelet function). See \code{wavSmoothing} of the \code{MALDIrppa} R package for details.}
 
 }
 
-\value{A list of modified \code{MassSpectrum} objects (see \code{MALDIquant} R package) according to chosen arguments.}
+\value{A list of modified \code{MassSpectrum} objects (see \code{MALDIquant} R package) according to chosen arguments. If the argument \code{referenceSpectra} is not completed and the argument \code{keepReferenceSpectra} is \code{TRUE}, a list containing the \code{MassSpectrum} objects modified named \code{"spectra"} and the created reference spectrum named \code{"RefS"} is returned.}
 
 \references{
 

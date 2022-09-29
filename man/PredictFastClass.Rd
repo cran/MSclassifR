@@ -36,8 +36,8 @@ PredictFastClass(peaks,
 \examples{
 \donttest{
 
-
 library("MSclassifR")
+library("caret")
 library("MALDIquant")
 
 #Test on Ecrobia

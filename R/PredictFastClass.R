@@ -9,7 +9,7 @@ PredictFastClass <- function(peaks,
                              normalizeFun = TRUE,
                              noMatch = 0){
   
-  if (isTRUE(moz!="ALL")){moz=moz}else{moz=colnames(mod_peaks)}
+  if (isTRUE(moz=="ALL")){moz=colnames(mod_peaks)}else{moz=moz}
   if (length(levels(as.factor(as.character(Y_mod_peaks))))==1){warning("There is only one category in the set of mass spectra used in regression models !");}
   if (nrow(mod_peaks)!=length(Y_mod_peaks)){warning("Number of MS in mod_peaks does not correspond to the length of Y_mod_peaks !");}
   
