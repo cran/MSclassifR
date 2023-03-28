@@ -2,7 +2,66 @@
 ### SelectionVarStat ##
 ########################
 
-SelectionVarStat=function(X,Y,stat.test="Limma",pi0.method="abh",fdr=0.05){
+SelectionVarStat=function(X,
+                          Y,
+                          stat.test="Limma",
+                          pi0.method="abh",
+                          fdr=0.05,
+                          Sampling = c("no", "up","down", "smote")){
+  
+  
+  # Define the method
+  SamplingM <- match.arg(Sampling)
+  
+  switch(SamplingM,
+         
+         "no" = {
+           message("No sampling method selected")
+           X=X; Y=Y;},
+         
+         ## Null
+         #NULL = {Y <- Y
+         #       X <- X}
+         
+         ## Up
+         
+         "up" = {
+           message("Up sampling method selected")
+           upTrain <- caret::upSample(x = X,
+                                      y = Y,
+                                      list = TRUE)
+           
+           X <- upTrain$x
+           Y <- factor(upTrain$y)
+         },
+         
+         
+         ## SMOTE
+         "smote" = {
+           message("Smote sampling method selected")
+           mozv <- colnames(X)
+           
+           dataSMOTE <- data.frame(Y,X)
+           
+           Smoted <- UBL::SmoteClassif(Y~., dataSMOTE, C.perc = "balance")
+           
+           X <- Smoted[,-1]
+           X[is.na(X)] <- 0
+           
+           colnames(X) = mozv
+           Y <- factor(Smoted$Y)
+         },
+         
+         ## Down
+         "down" = {
+           message("Down sampling method selected")
+           DownTrain <- caret::downSample(x = X,
+                                          y = Y, list = TRUE)
+           X <- DownTrain$x
+           Y <- factor(DownTrain$y)
+         })
+  
+  
   
   #Non parametric test 
   if (stat.test=="kruskal"){

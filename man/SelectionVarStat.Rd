@@ -13,7 +13,8 @@ SelectionVarStat(X,
                  Y,
                  stat.test = "Limma",
                  pi0.method="abh",
-                 fdr=0.05)
+                 fdr=0.05,
+                 Sampling = c("no", "up","down", "smote"))
 
 }
 
@@ -27,6 +28,8 @@ SelectionVarStat(X,
  \item{pi0.method}{a \code{character} among "abh", "st.spline", "st.boot", "langaas", "histo", "pounds", "jiang", "slim". It corresponds to statistical methods used to estimate the proportion of true null hypotheses among the set of tested mass-over-charge values. See the \code{estim.pi0} function of th R package \code{cp4p} for details.}
  
  \item{fdr}{a \code{numeric} corresponding to False Discovery Rate threshold used to determine the differential mass-over-charge values. 0.05 by default.}
+ 
+ \item{Sampling}{a \code{character} indicating an optional subsampling method to handle imbalanced datasets: subsampling methods are either \code{"no"} (no subsampling), \code{"up"}, \code{"down"} or \code{"smote"}. \code{"no"} by default.}
 }
 
 \value{A list composed of:
@@ -45,11 +48,8 @@ Gianetto, Quentin & Combes, Florence & Ramus, Claire & Bruley, Christophe & Cout
 
 }
 
-
 \examples{
-
 \donttest{
-
 library("MSclassifR")
 library("MALDIquant")
 
@@ -61,7 +61,7 @@ data("CitrobacterRKIspectra","CitrobacterRKImetadata", package = "MSclassifR")
 # standard pre-processing of mass spectra
 spectra <- MSclassifR::SignalProcessing(CitrobacterRKIspectra)
 # detection of peaks in pre-processed mass spectra
-peaks <- MSclassifR::PeakDetection(x = spectra, labels = CitrobacterRKImetadata$Strain_name_spot)
+peaks <- MSclassifR::PeakDetection(x = spectra, averageMassSpec=FALSE)
 # matrix with intensities of peaks arranged in rows (each column is a mass-over-charge value)
 IntMat <- MALDIquant::intensityMatrix(peaks)
 rownames(IntMat) <- paste(CitrobacterRKImetadata$Strain_name_spot)
@@ -74,23 +74,69 @@ X <- t(IntMat)
 # define the known categories of mass spectra for the classification
 Y <- factor(CitrobacterRKImetadata$Species)
 
+
 ###############################################################################
-## 2. Perform the SelectionVarStat function
-                
-OptiPeaks <- SelectionVarStat(X,
-                              Y,
-                              stat.test = ("Limma"),
-                              pi0.method="abh",
-                              fdr=0.05)
-             
-## Estimation of the number of peaks to discriminate species
-OptiPeaks$nb_to_sel
+## 2. Perform variables selection using SelectionVar with RFE and random forest 
+# with 5 to 10 variables, 
+# up sampling method and trained with the Kappa coefficient metric
+a <- SelectionVar(X,
+                  Y,
+                  MethodSelection = c("RFERF"),
+                  MethodValidation = c("cv"),
+                  PreProcessing = c("center","scale","nzv","corr"),
+                  NumberCV = 2,
+                  Metric = "Kappa",
+                  Sizes = c(5:10),
+                  Sampling = "up")
 
-## Discriminant mass-over-chage values 
-OptiPeaks$sel_moz
+# Plotting peaks on the first pre-processed mass spectrum and highlighting the 
+# discriminant mass-over-charge values with red lines
+PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],
+            Peaks2=a$sel_moz,col_spec="blue",col_peak="black")
+
+###############################################################################
+## 3. Perform variables selection using SelectionVar with VSURF 
+# This function can last a few minutes
+d <- SelectionVar(X, Y, MethodSelection = c("VSURF"))
+summary(d$result)
+
+###############################################################################
+## 4. Perform variables selection using SelectionVar with "mda" or "cvp"
+# option 1: Using mean decrease in accuracy  
+# with no sampling method
+e <- SelectionVar(X,Y,MethodSelection="mda",Ntree=10*ncol(X)) 
+
+# Estimation of the number of peaks to discriminate species
+e$nb_to_sel
+
+# Discriminant mass-over-charge values 
+e$sel_moz
+
+# Plotting peaks on the first pre-processed mass spectrum and highlighting the 
+# discriminant mass-over-charge values with red lines
+PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],
+            Peaks2=e$sel_moz,col_spec="blue",col_peak="black")
+
+# option 2: Using cross-validated permutation variable importance measures (more "time-consuming")       
+# with no sampling method
+f <- SelectionVar(X,Y,MethodSelection="cvp",NumberCV=2,ncores=2,Ntree=1000)
+
+# Estimation of the number of peaks to discriminate species
+f$nb_to_sel
+
+# Discriminant mass-over-charge values 
+f$sel_moz
+
+# Plotting peaks on the first pre-processed mass spectrum and highlighting the 
+# discriminant mass-over-charge values with red lines
+PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],
+            Peaks2=f$sel_moz,col_spec="blue",col_peak="black")
+
+# Mass-over charge values found with both methods ("mda" and "cvp")
+intersect(e$sel_moz,f$sel_moz)
 
 }
 }
 
-
+\keyword{Feature selection}
 

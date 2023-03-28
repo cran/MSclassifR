@@ -10,13 +10,13 @@ This function predicts the category (species, phenotypes...) to which a mass spe
 
 \usage{
 PredictLogReg(peaks,
-               model,
-               moz,
-               tolerance = 6,
-               toleranceStep = 2,
-               normalizeFun = TRUE,
-               noMatch=0,
-               Reference = NULL)
+              model,
+              moz,
+              tolerance = 6,
+              toleranceStep = 2,
+              normalizeFun = TRUE,
+              noMatch=0,
+              Reference = NULL)
 }
 
 \arguments{
@@ -76,7 +76,7 @@ data("CitrobacterRKIspectra","CitrobacterRKImetadata", package = "MSclassifR")
 # standard pre-processing of mass spectra
 spectra <- SignalProcessing(CitrobacterRKIspectra)
 # detection of peaks in pre-processed mass spectra
-peaks <- PeakDetection(x = spectra, labels = CitrobacterRKImetadata$Strain_name_spot)
+peaks <- MSclassifR::PeakDetection(x = spectra, averageMassSpec=FALSE)
 # matrix with intensities of peaks arranged in rows (each column is a mass-over-charge value)
 IntMat <- MALDIquant::intensityMatrix(peaks)
 rownames(IntMat) <- paste(CitrobacterRKImetadata$Strain_name_spot)
@@ -90,9 +90,9 @@ X <- t(IntMat)
 Y <- factor(CitrobacterRKImetadata$Species)
 
 ###############################################################################
-## 2. Selection of discriminant mass-over-charge values using sPLS-DA
+## 2. Selection of discriminant mass-over-charge values using RFERF
 # with 5 to 10 variables, 
-# up-sampling method and trained 
+# without sampling method and trained 
 # with the Accuracy coefficient metric
 
 a <- MSclassifR::SelectionVar(X,
@@ -101,9 +101,8 @@ a <- MSclassifR::SelectionVar(X,
                               MethodValidation = c("cv"),
                               PreProcessing = c("center","scale","nzv","corr"),
                               NumberCV = 2,
-                              Metric = "Accuracy",
-                              Sizes = c(2:5),
-                              Sampling = "up")
+                              Metric = "Kappa",
+                              Sizes = c(5:10))
 
 sel_moz=a$sel_moz
 

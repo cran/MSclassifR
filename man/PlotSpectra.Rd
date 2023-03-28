@@ -43,7 +43,7 @@ spectra <- SignalProcessing(CitrobacterRKIspectra)
 # Plot pre-processed mass spectrum
 PlotSpectra(SpectralData=spectra[[1]])
 # detection of peaks in pre-processed mass spectra
-peaks <- PeakDetection(x = spectra, labels = CitrobacterRKImetadata$Strain_name_spot)
+peaks <- PeakDetection(x = spectra, averageMassSpec=FALSE)
 # Plot peaks on pre-processed mass spectrum
 PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],col_spec="blue",col_peak="black")
 

@@ -37,62 +37,38 @@ PredictFastClass(peaks,
 \donttest{
 
 library("MSclassifR")
-library("caret")
 library("MALDIquant")
 
-#Test on Ecrobia
-## url for load the  MS data
-MSdataE <- "https://agodmer.github.io/MSData/Ecrobia/MassSpectra_Ecrobia.Rdata"
-MSMetadataE <- "https://agodmer.github.io/MSData/Ecrobia/metaData_Ecrobia.Rdata"
-## Load mass spectra
-load(url(MSdataE))
-load(url(MSMetadataE))
-
-## Split data to tune the model according train set
-Y <- factor(metaData_Ecrobia$Species)
-Index_skfold <- caret::createDataPartition(Y, p = 0.8, list=FALSE)
-
-## Train set creation
-Xtrain <- MassSpectra_Ecrobia[Index_skfold]
-Y_train <- Y[Index_skfold]
-
-spectra <- MSclassifR::SignalProcessing(Xtrain,alignSpectra_SN = 2)
-
-## Peaks detection for the train set
-peaks <- MSclassifR::PeakDetection(spectra, labels = c(1:length(Xtrain)))
-
-## Perfom an Intensity Matrix 
+# load mass spectra and their metadata
+data("CitrobacterRKIspectra","CitrobacterRKImetadata", package = "MSclassifR")
+# standard pre-processing of mass spectra
+spectra <- SignalProcessing(CitrobacterRKIspectra)
+# detection of peaks in pre-processed mass spectra
+peaks <- peaks <- MSclassifR::PeakDetection(x = spectra, averageMassSpec=FALSE)
+# matrix with intensities of peaks arranged in rows (each column is a mass-over-charge value)
 IntMat <- MALDIquant::intensityMatrix(peaks)
-## Rows are named according to selected metadata
-rownames(IntMat) <-  paste(c(1:length(Xtrain))) 
+rownames(IntMat) <- paste(CitrobacterRKImetadata$Strain_name_spot)
 # remove missing values in the matrix
 IntMat[is.na(IntMat)] <- 0
 # normalize peaks according to the maximum intensity value for each mass spectrum
 IntMat <- apply(IntMat,1,function(x) x/(max(x)))
+# transpose the matrix for statistical analysis
+X <- t(IntMat)
+# define the known categories of mass spectra for the classification
+Y <- factor(CitrobacterRKImetadata$Species)
 
-## Transpose Matrix for the train set
-X_train <- t(IntMat)
-
-## Test set creation
-Xtest <- MassSpectra_Ecrobia[-Index_skfold]
-Y_test <- Y[-Index_skfold]
-spectra2 <- MSclassifR::SignalProcessing(Xtest,alignSpectra_SN = 2)
-
-## Peaks detection for the test set
-X_test <- MSclassifR::PeakDetection(spectra2, labels = c(1:length(Xtest)))
-
-#Predict species without peak selection using a tolerance of 3 Da
-res = PredictFastClass(peaks=X_test,
-                       mod_peaks=X_train,
-                       Y_mod_peaks=Y_train,
-                       tolerance = 3)
+#Predict species without peak selection using a tolerance of 1 Da
+res = PredictFastClass(peaks=peaks[1:5],
+                       mod_peaks=X,
+                       Y_mod_peaks=Y,
+                       tolerance = 1)
 
 #comparing predicted categories (species) and the truth
-cbind(res$pred_cat,as.character(Y_test))
+cbind(res$pred_cat,as.character(Y[1:5]))
 
 # The method can be applied after a peak selection step
-a <- SelectionVar(X_train,
-                  Y_train,
+a <- SelectionVar(X,
+                  Y,
                   MethodSelection = c("RFERF"),
                   MethodValidation = c("cv"),
                   PreProcessing = c("center","scale","nzv","corr"),
@@ -101,14 +77,14 @@ a <- SelectionVar(X_train,
                   Sizes = c(20:40),
                   Sampling = "up")
 
-#Predict species from selected peaks using a tolerance of 3 Da
-res = PredictFastClass(peaks=X_test,
+#Predict species from selected peaks using a tolerance of 1 Da
+res = PredictFastClass(peaks=peaks[1:5],
                        moz = a$sel_moz,
-                       mod_peaks=X_train,
-                       Y_mod_peaks=Y_train, tolerance = 3)
+                       mod_peaks=X,
+                       Y_mod_peaks=Y, tolerance = 1)
 
 #comparing predicted categories (species) and the truth
-cbind(res$pred_cat,as.character(Y_test))
+cbind(res$pred_cat,as.character(Y[1:5]))
 
 }
 }

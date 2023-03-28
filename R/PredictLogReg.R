@@ -12,7 +12,7 @@ PredictLogReg <-  function (peaks,
                             Reference = NULL){
   
   if(length(unique(names(peaks))) != length(peaks) && is.null(names(peaks)) == FALSE){stop("Each element of X must have a unique name")}
-
+ 
   #Create a subfunction
   predi=function(Peaks,
                  Modell,
@@ -34,11 +34,13 @@ PredictLogReg <-  function (peaks,
     
     for (i in 1:length(Peaks)){
       
-      name[i]=Peaks[[i]]@metaData$fullName;
+      if(is.null(Peaks[[i]]@metaData$fullName)){name[i]=Peaks[[i]]@metaData$file;}
+      else{name[i]=Peaks[[i]]@metaData$fullName;}
+      
       
       # Print Metadata
       print(name[i])
-
+      
       method[i]= Modell$method;
       
       Peak[[i]] <- data.frame(X_var = Peaks[[i]]@mass, # mass over charges to match
@@ -57,58 +59,60 @@ PredictLogReg <-  function (peaks,
       if(sum(is.na(DF.match[[i]]$X_var.y)) == nrow(DF.match[[i]])){
         warning("No m/z from peaks object matched with the m/z in the moz objet,
                 the tolerance has been increased by steps indicated in toleranceStep argument Da")
+        Tolerance.step <- Tolerance
+        
         
         while(sum(is.na(DF.match[[i]]$X_var.y)) == nrow(DF.match[[i]])){
-          
-          Tolerance.step <- Tolerance + toleranceStep #Tolerance step
-          
-          message(paste(c("tolerance found for match =", Tolerance.step)))
+          Tolerance.step <- Tolerance.step + toleranceStep  #Tolerance step
           
           DF.match[[i]] <- fuzzyjoin::distance_left_join(s_moz,
                                                          Peak[[i]],
                                                          by = "X_var",
                                                          max_dist = Tolerance.step)
+          Tolerance.step <- Tolerance.step
+          
         }
         
+        message(paste(c("tolerance found for match =", Tolerance.step)))
       }
-        
-        #diff_mass[[i]] <- abs(DF.match[[i]][,2] - DF.match[[i]][,1])
-        #DF.match[[i]] <- cbind.data.frame(DF.match[[i]], diff_mass = diff_mass[[i]])
-        #DF.matchSplit[[i]] <- split.data.frame(DF.match[[i]], DF.match[[i]]$X_var.y)
-        #DF.matchSplit[[i]] <- do.call("rbind",lapply(DF.matchSplit[[i]], function(x) x[which.min(x[,4]),]))
-        #DF.match[[i]] <- dplyr::full_join(DF.matchSplit[[i]], data.frame(X_var.x = as.numeric(moz)), by = "X_var.x")
-        #DF.match[[i]] <- DF.match[[i]][order(DF.match[[i]][,1]),][,-4]
-        
+      
+      #diff_mass[[i]] <- abs(DF.match[[i]][,2] - DF.match[[i]][,1])
+      #DF.match[[i]] <- cbind.data.frame(DF.match[[i]], diff_mass = diff_mass[[i]])
+      #DF.matchSplit[[i]] <- split.data.frame(DF.match[[i]], DF.match[[i]]$X_var.y)
+      #DF.matchSplit[[i]] <- do.call("rbind",lapply(DF.matchSplit[[i]], function(x) x[which.min(x[,4]),]))
+      #DF.match[[i]] <- dplyr::full_join(DF.matchSplit[[i]], data.frame(X_var.x = as.numeric(moz)), by = "X_var.x")
+      #DF.match[[i]] <- DF.match[[i]][order(DF.match[[i]][,1]),][,-4]
+      
       ## When no match, intensity values are replaced by the noMatch argument
       DF.match[[i]]$intensity[is.na(DF.match[[i]]$intensity)] <- noMatch
       
-        #if several matchs
-        td=table(DF.match[[i]]$X_var.x)
-        dbl=names(td)[td>1]
-        if (length(dbl)>0){
-          keepDF=NULL
-          for (l in 1:length(dbl)){
-            diff_m=abs(DF.match[[i]][DF.match[[i]]$X_var.x==dbl[l],2]-DF.match[[i]][DF.match[[i]]$X_var.x==dbl[l],1])
-            keepDF=rbind(keepDF,DF.match[[i]][DF.match[[i]]$X_var.x==dbl[l],][which.min(diff_m),])
-          }
-          DF.match[[i]]=DF.match[[i]][which(!DF.match[[i]]$X_var.x%in%dbl),]
-          DF.match[[i]]=rbind(DF.match[[i]],keepDF)
-          DF.match[[i]]=DF.match[[i]][order(DF.match[[i]][,1]),]
+      #if several matchs
+      td=table(DF.match[[i]]$X_var.x)
+      dbl=names(td)[td>1]
+      if (length(dbl)>0){
+        keepDF=NULL
+        for (l in 1:length(dbl)){
+          diff_m=abs(DF.match[[i]][DF.match[[i]]$X_var.x==dbl[l],2]-DF.match[[i]][DF.match[[i]]$X_var.x==dbl[l],1])
+          keepDF=rbind(keepDF,DF.match[[i]][DF.match[[i]]$X_var.x==dbl[l],][which.min(diff_m),])
         }
-        
-        DF.Peaks[[i]] <- data.frame(DF.match[[i]]$intensity)
+        DF.match[[i]]=DF.match[[i]][which(!DF.match[[i]]$X_var.x%in%dbl),]
+        DF.match[[i]]=rbind(DF.match[[i]],keepDF)
+        DF.match[[i]]=DF.match[[i]][order(DF.match[[i]][,1]),]
+      }
+      
+      DF.Peaks[[i]] <- data.frame(DF.match[[i]]$intensity)
+      DF.Peaks[[i]] <- t(DF.Peaks[[i]])
+      colnames(DF.Peaks[[i]]) <- as.character(DF.match[[i]]$X_var.x)
+      
+      # Normalize peak with the maximum intensity value
+      if (NormalizeFun){
+        norma<-function(x) x/(max(x))
+        DF.Peaks[[i]] <- apply(DF.Peaks[[i]],1,norma)
         DF.Peaks[[i]] <- t(DF.Peaks[[i]])
-        colnames(DF.Peaks[[i]]) <- as.character(DF.match[[i]]$X_var.x)
-        
-        # Normalize peak with the maximum intensity value
-        if (NormalizeFun){
-          norma<-function(x) x/(max(x))
-          DF.Peaks[[i]] <- apply(DF.Peaks[[i]],1,norma)
-          DF.Peaks[[i]] <- t(DF.Peaks[[i]])
-        }
-        
-        prediction[[i]] <- stats::predict(Modell,DF.Peaks[[i]], type = "prob");
-        
+      }
+      
+      prediction[[i]] <- stats::predict(Modell,DF.Peaks[[i]], type = "prob");
+      
       
     }
     
@@ -231,7 +235,7 @@ PredictLogReg <-  function (peaks,
     Global.stats <- do.call("data.frame", Global.stat)
     Statistic.param = row.names(Global.stats)
     
-    Global.stats <- reshape2::melt(Global.stat, id.vars = NULL)
+    Global.stats <- suppressMessages(reshape2::melt(Global.stat, id.vars = NULL))
     Global.stats <- data.frame(Global.stats, Statistic.param)
     
     Details.stat <- try(lapply(Confusion.Matrix, function(x) cbind.data.frame(x[["byClass"]], "Class" = row.names(x[["byClass"]]))), silent = TRUE)

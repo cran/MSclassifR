@@ -6,8 +6,8 @@ LogReg <- function(X,
                    repeats = 2,
                    Metric = c("Kappa", "Accuracy", "F1", "AdjRankIndex", "MatthewsCorrelation"),
                    kind="linear",
-                   Sampling = c(NULL, "up", "down", "smote")){
-
+                   Sampling = c("no", "up", "down", "smote")){
+  message("LogReg function according to the following parameters:")
   moz=as.numeric(moz)
   ### 1. Global matrix of data ###
 
@@ -102,6 +102,7 @@ LogReg <- function(X,
       switch(Metrica,
              ## FA
              "F1" = {
+               message("smote sampling method and F1 metric selected")
                fit.control <- caret::trainControl(method = "repeatedcv",
                                                   number = number,
                                                   repeats = repeats,
@@ -111,6 +112,7 @@ LogReg <- function(X,
              
              ## With kappa or accuracy
              "Kappa" = {
+               message("smote sampling method and Kappa metric selected")
                fit.control <- caret::trainControl(method = "repeatedcv",
                                                   number = number,
                                                   repeats = repeats,
@@ -119,6 +121,7 @@ LogReg <- function(X,
              },
              
              "Accuracy" = {
+               message("smote sampling method and accuracy metric selected")
                fit.control <- caret::trainControl(method = "repeatedcv",
                                                   number = number,
                                                   repeats = repeats,
@@ -128,6 +131,7 @@ LogReg <- function(X,
              
              ### With AdjRankIndex metric
              "AdjRankIndex" = {
+               message("smote sampling method and AdjRankIndex metric selected")
                fit.control <- caret::trainControl(method = "repeatedcv",
                                                   number = number,
                                                   repeats = repeats,
@@ -137,6 +141,7 @@ LogReg <- function(X,
              
              ### With Matthews correlation
              "MatthewsCorrelation" = {
+               message("smote sampling method and MatthewsCorrelation metric selected")
                fit.control <- caret::trainControl(method = "repeatedcv",
                                                   number = number,
                                                   repeats = repeats,
@@ -154,6 +159,9 @@ LogReg <- function(X,
       switch(Metricb,
       ## FA
       "F1" = {
+        if(length(Sampling)>1){Sampling="no"}
+        if(Sampling=='no'){Sampling=NULL
+        message("no sampling method and accuracy metric selected")}else{message(paste(Sampling)," method and F1 metric selected")}
         fit.control <- caret::trainControl(method = "repeatedcv",
                                            number = number,
                                            repeats = repeats,
@@ -164,23 +172,34 @@ LogReg <- function(X,
       
       ## With kappa or accuracy
       "Kappa" = {
+        if(length(Sampling)>1){Sampling="no"}
+        if(Sampling=='no'){Sampling=NULL
+        message("no sampling method and Kappa metric selected")}else{message(paste(Sampling)," method and Kappa metric selected")}
         fit.control <- caret::trainControl(method = "repeatedcv",
                                            number = number,
                                            repeats = repeats,
                                            search="random",
-                                           classProbs = T)
+                                           classProbs = T,
+                                           sampling = Sampling)
       },
       
       "Accuracy" = {
+        if(length(Sampling)>1){Sampling="no"}
+        if(Sampling=='no'){Sampling=NULL
+        message("no sampling method and accuracy metric selected")}else{message(paste(Sampling)," method and accuracy metric selected")}
         fit.control <- caret::trainControl(method = "repeatedcv",
                                            number = number,
                                            repeats = repeats,
                                            search="random",
-                                           classProbs = T)
+                                           classProbs = T,
+                                           sampling = Sampling)
       },
       
       ### With AdjRankIndex metric
       "AdjRankIndex" = {
+        if(length(Sampling)>1){Sampling="no"}
+        if(Sampling=='no'){Sampling=NULL
+        message("no sampling method and AdjRankIndex metric selected")}else{message(paste(Sampling)," method and AdjRankIndex metric selected")}
         fit.control <- caret::trainControl(method = "repeatedcv",
                                            number = number,
                                            repeats = repeats,
@@ -191,6 +210,9 @@ LogReg <- function(X,
       
       ### With Matthews correlation
       "MatthewsCorrelation" = {
+        if(length(Sampling)>1){Sampling="no"}
+        if(Sampling=='no'){Sampling=NULL
+        message("no sampling method and MatthewsCorrelation metric selected")}else{message(paste(Sampling)," method and MatthewsCorrelation metric selected")}
         fit.control <- caret::trainControl(method = "repeatedcv",
                                            number = number,
                                            repeats = repeats,
@@ -209,6 +231,7 @@ LogReg <- function(X,
   
   ### Estimation ###
   if (kind=="linear"){
+    message("estimation with linear method")
       modelCV <- caret::train(Y_target~.,
                               data = DFnnet,
                               method = "multinom",
@@ -222,39 +245,46 @@ LogReg <- function(X,
 
   row.names(DFnnet) = NULL
   if (kind=="nnet"){
+    message("estimation with nnet method")
        modelCV <- caret::train(Y_target~.,
                                data = DFnnet,
                                method = "nnet",
                                trControl = fit.control,
                                maxit=1000,
                                MaxNWts=84581,
+                               tuneLength = 10,
                                preProcess=c("center","scale"),
                                trace = FALSE,
                                metric = Metric)
   }
   if (kind=="rf"){
+    message("estimation with rf method")
        modelCV <- caret::train(Y_target~.,
                                data = DFnnet,
                                method = "rf",
                                trControl = fit.control,
                                maxit=1000,
                                MaxNWts=84581,
+                               tuneLength = 10,
                                preProcess=c("center","scale"),
                                trace = FALSE,
                                metric = Metric)
   }
   if (kind=="svm"){
+    message("estimation with svm method")
        modelCV <- caret::train(Y_target~.,
                                data = DFnnet,
                                method = "svmLinear2",
                                trControl = fit.control,
                                maxit=1000,
                                MaxNWts=84581,
+                               tuneLength = 10,
                                preProcess=c("center","scale"),
                                trace = FALSE,
                                metric = Metric)
   }
   if (kind=="xgb"){
+    message("estimation with xgbTree method")
       ## Grid for xgbTree
       xgbGrid <- expand.grid(nrounds = c(1,5,10,12),
                            max_depth = c(1,4,10,16,25),
@@ -277,13 +307,11 @@ LogReg <- function(X,
     
   }
   
-
-  
   
   ## Arrange data to plot
   variable <- NULL
   value <- NULL
-  b_1 <- reshape2::melt(modelCV$resample[,-3])
+  b_1 <- suppressMessages(reshape2::melt(modelCV$resample[,-3]))
   b1 <- ggplot2::ggplot(data = b_1 , ggplot2::aes(variable, value, color = variable))
   b1 = b1 + ggplot2::geom_boxplot() + ggplot2::theme_bw() + ggplot2::ylim(0, 1)
 

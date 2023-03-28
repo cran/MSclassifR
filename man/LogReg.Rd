@@ -16,7 +16,7 @@ LogReg(X,
        repeats = 2,
        Metric = c("Kappa", "Accuracy", "F1", "AdjRankIndex", "MatthewsCorrelation"),
        kind="linear",
-       Sampling = c(NULL, "up", "down", "smote"))
+       Sampling = c("no", "up", "down", "smote"))
 }
 
 \arguments{
@@ -28,13 +28,13 @@ LogReg(X,
 
   \item{number}{\code{integer} corresponding to the number of folds or number of resampling iterations. See arguments of the \code{trainControl} function of the \code{caret} R package.}
 
-  \item{Metric}{a \code{charater} indicating metric to select the optimal model. The possibles metrics are the \code{"Kappa"} coefficient,\code{"Accruracy"}, the \code{"F1"} score, \code{"AdjRankIndex"} for the Adjusted Rand Index or \code{"MatthewsCorrelation"} for the Matthews Correlation Coefficient.}
+  \item{Metric}{a \code{character} indicating metric to select the optimal model. The possibles metrics are the \code{"Kappa"} coefficient,\code{"Accuracy"}, the \code{"F1"} score, \code{"AdjRankIndex"} for the Adjusted Rand Index or \code{"MatthewsCorrelation"} for the Matthews Correlation Coefficient.}
   
   \item{repeats}{\code{integer} corresponding to the number of complete sets of folds to compute. See \code{trainControl} function of the \code{caret} R package for more details.}
 
   \item{kind}{If \code{kind="nnet"}, then a nonlinear multinomial logistic regression is estimated via neural networks. If \code{kind="rf"}, then it is estimated via random forests. If \code{kind="svm"}, then it is estimated via support vector machines with linear kernel. If \code{kind="xgb"}, then it is estimated via eXtreme gradient boosting. Else a linear multinomial logistic regression is performed (by default).}
   
-  \item{Sampling}{a \code{charater} indicating an optional subsampling method to handle imbalanced datasets. The possibles methods to rebalance the data are \code{"up"}, \code{"down"} and \code{"smote"}.}
+  \item{Sampling}{a \code{character} indicating an optional subsampling method to handle imbalanced datasets: subsampling methods are either \code{"no"} (no subsampling), \code{"up"}, \code{"down"} or \code{"smote"}. \code{"no"} by default.}
   
 }
 
@@ -77,7 +77,6 @@ Matthews, B. W. (1975). "Comparison of the predicted and observed secondary stru
 
 \examples{
 \donttest{
-
 library("MSclassifR")
 library("MALDIquant")
 
@@ -89,7 +88,7 @@ data("CitrobacterRKIspectra","CitrobacterRKImetadata", package = "MSclassifR")
 # standard pre-processing of mass spectra
 spectra <- SignalProcessing(CitrobacterRKIspectra)
 # detection of peaks in pre-processed mass spectra
-peaks <- PeakDetection(x = spectra, labels = CitrobacterRKImetadata$Strain_name_spot)
+peaks <- MSclassifR::PeakDetection(x = spectra, averageMassSpec=FALSE)
 # matrix with intensities of peaks arranged in rows (each column is a mass-over-charge value)
 IntMat <- MALDIquant::intensityMatrix(peaks)
 rownames(IntMat) <- paste(CitrobacterRKImetadata$Strain_name_spot)
@@ -103,7 +102,7 @@ X <- t(IntMat)
 Y <- factor(CitrobacterRKImetadata$Species)
 
 ###############################################################################
-## 2. Selection of discriminant mass-over-charge values using sPLS-DA
+## 2. Selection of discriminant mass-over-charge values using RFERF
 # with 5 to 10 variables, 
 # up sampling method and 
 # trained with the Accuracy coefficient metric
@@ -240,3 +239,5 @@ model_lm=MSclassifR::LogReg(X=X,
 }
 
 }
+
+\keyword{Estimation}

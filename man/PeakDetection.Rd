@@ -10,9 +10,11 @@ This function performs a data analysis pipeline to pre-process mass spectra. It 
 
 \usage{
 PeakDetection(x,
-              labels,
+              averageMassSpec = TRUE,
+              labels = NULL,
               averageMassSpectraMethod = "median",
               SNRdetection = 3,
+              binPeaks = TRUE,
               PeakDetectionMethod = "MAD",
               halfWindowSizeDetection = 11,
               AlignMethod = "strict",
@@ -24,6 +26,8 @@ PeakDetection(x,
 \arguments{
   \item{x}{a \code{list} of \code{MassSpectrum} objects (see \code{MALDIquant} R package).}
 
+  \item{averageMassSpec}{a \code{logical} value indicating whether it is necessary to group the spectra according to the arguments \code{labels} and  \code{averageMassSpectraMethod}. It is fixed to \code{"TRUE"} by default.}
+
   \item{labels}{a \code{list} of \code{factor} objects to do groupwise averaging.}
 
   \item{averageMassSpectraMethod}{a \code{character} indicating the method used to average mass spectra according to labels. It is fixed to \code{"median"} by default.This function can be replaced by another mathematical function such as \code{"mean"}. See \code{averageMassSpectra} of \code{MALDIquant} R package.}
@@ -31,6 +35,8 @@ PeakDetection(x,
   \item{PeakDetectionMethod}{a \code{character} indicating the noise estimation method. It uses \code{"MAD"} method for \code{list} of \code{MassSpectrum} objects. This noise estimation method estimation method can be remplaced \code{"SuperSmoother"}. See \code{estimateNoise-methods} of the \code{MALDIquant} R package for details.}
   
   \item{SNRdetection}{a \code{numeric} value indicating the signal-to-noise ratio used to detect peaks (by default = {\code{3}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
+  
+  \item{binPeaks}{a \code{logical} value indicating the peaks are aligned in discrete bins. It is fixed to \code{"TRUE"} by default. See \code{binPeaks} of the \code{MALDIquant} R package for details.}
 
   \item{halfWindowSizeDetection}{a \code{numeric} value half window size to detect peaks (by default = {\code{11}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
@@ -58,7 +64,6 @@ All the methods used for \code{PeakDetection} functions are selected from \code{
 
 \examples{
 library("MALDIquant")
-library("MALDIquantForeign")
 library("MSclassifR")
 
 
@@ -70,13 +75,15 @@ spectra <- SignalProcessing(CitrobacterRKIspectra)
 
 ## Detection of peaks in pre-processed mass spectra
 peaks <- PeakDetection(x = spectra,
- labels = CitrobacterRKImetadata$Strain_name_spot,
- averageMassSpectraMethod = "median",
- SNRdetection = 3,
- halfWindowSizeDetection = 11,
- AlignFrequency = 0.20,
- AlignMethod = "strict",
- Tolerance = 0.002)
+                       averageMassSpec = FALSE,
+                       labels = CitrobacterRKImetadata$Strain_name_spot,
+                       averageMassSpectraMethod = "median",
+                       SNRdetection = 3,
+                       binPeaks = TRUE,
+                       halfWindowSizeDetection = 11,
+                       AlignFrequency = 0.20,
+                       AlignMethod = "strict",
+                       Tolerance = 0.002)
 
 # Plot peaks on a pre-processed mass spectrum
 PlotSpectra(SpectralData=spectra[[1]],Peaks=peaks[[1]],col_spec="blue",col_peak="black")

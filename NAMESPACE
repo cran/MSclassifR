@@ -24,7 +24,10 @@ importFrom("stats",
            "pf",
            "kruskal.test",
            "na.omit",
-           "model.matrix")
+           "model.matrix",
+           "ecdf",
+           "quantile",
+           "runif")
 importFrom("ggplot2",
            "ggplot",
            "aes",
@@ -70,6 +73,11 @@ importFrom("cp4p",
            "adjust.p",
            "estim.pi0")
 import("statmod")
+importFrom("randomForest",
+           "randomForest",
+           "importance")
+importFrom("vita",
+           "CVPVI")
 
 
 
