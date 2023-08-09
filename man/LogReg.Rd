@@ -2,10 +2,10 @@
 
 \alias{LogReg}
 
-\title{Estimation of a multinomial logistic regression to predict the category to which a mass spectrum belongs}
+\title{Estimation of a multinomial regression to predict the category to which a mass spectrum belongs}
 
 \description{
-This function estimates a multinomial logistic regression using cross-validation to predict the category (species, phenotypes...) to which a mass spectrum belongs from a set of shortlisted mass-over-charge values corresponding to discriminant peaks. Two main kinds of models can be estimated: linear or nonlinear (with neural networks, random forests, support vector machines with linear kernel, or eXtreme Gradient Boosting). Hyperparameters are randomly searched, except for the eXtreme Gradient Boosting where a grid search is performed.
+This function estimates a multinomial regression using cross-validation to predict the category (species, phenotypes...) to which a mass spectrum belongs from a set of shortlisted mass-over-charge values corresponding to discriminant peaks. Two main kinds of models can be estimated: linear or nonlinear (with neural networks, random forests, support vector machines with linear kernel, or eXtreme Gradient Boosting). Hyperparameters are randomly searched, except for the eXtreme Gradient Boosting where a grid search is performed.
 }
 
 \usage{
@@ -55,12 +55,12 @@ LogReg(X,
 The estimation is performed using the \code{train} function of the \code{caret} R package. For each kind of model, random parameters are tested to find a model according to the best \code{metric}. The formulas for the \code{metric} are as follows:
 
 \deqn{Accuracy = Number Of Correct Predictions/Total Number Of Predictions}
-\deqn{Kappa coefficient = Observed Agreement-Chance Agreement/1-Chance Agreement}
+\deqn{Kappa coefficient = (Observed Agreement-Chance Agreement)/(1-Chance Agreement)}
 \deqn{F1 = True Positive/(True Positive + 1/2 (False Positive + False Negative))}
 
-The adjusted Rand index (\code{"AdjRankIndex"}) is defined as the corrected-for-chance version of the Rand index which allows you to compare two groups, see \code{mclust} package and \code{adjustedRandIndex()} function for more details. The Matthews correlation coefficient (\code{"MatthewsCorrelation"}) which measures the association of two variables is calculated using \code{mcc} function in the \code{mltools} R package.
+The adjusted Rand index (\code{"AdjRankIndex"}) is defined as the corrected-for-chance version of the Rand index which allows comparing two groups (see \code{mclust} package and \code{adjustedRandIndex()} function for more details). The Matthews correlation coefficient (\code{"MatthewsCorrelation"}) is estimated using \code{mcc} function in the \code{mltools} R package.
 
-For \code{Sampling} methods available for unbalanced data: \code{"up"} corresponds to the up-sampling method which consists of random sampling (with replacement) so that the minority class is the same size as the majority class; \code{"down"} corresponds to the down-sampling method randomly which consists of random sampling (without replacement) of the majority class so that their class frequencies match the minority class; \code{"smote"} correspond to the Synthetic Minority Over sampling Technique (SMOTE) specific algorithm for data augmentation which consist of creating new data from minority class using the K Nearest Neighbor algorithm.
+The \code{Sampling} methods available for imbalanced data are: \code{"up"} to the up-sampling method which consists of random sampling (with replacement) so that the minority class is the same size as the majority class; \code{"down"} to the down-sampling method which consists of random sampling (without replacement) of the majority class so that their class frequencies match the minority class; \code{"smote"} to the Synthetic Minority Over sampling Technique (SMOTE) algorithm for data augmentation which consists of creating new data from minority class using the K Nearest Neighbor algorithm.
 }
 
 \references{

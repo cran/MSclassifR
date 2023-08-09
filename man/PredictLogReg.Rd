@@ -27,7 +27,7 @@ PredictLogReg(peaks,
   \item{moz}{a \code{vector} with the set of shortlisted mass-over-charge values used to estimate the model \code{Model}.}
 
   \item{tolerance}{a \code{numeric} value of accepted tolerance to match peaks to the set of shortlisted mass-over-charge values. It is fixed to 6 Da by default.}
-  
+
    \item{toleranceStep}{a \code{numeric} value added to the \code{tolerance} parameter to match peaks to the set of shortlisted mass-over-charge values. It is fixed to 2 Da by default.}
 
   \item{normalizeFun}{a \code{logical} value, if \code{TRUE} (default) the maximum intensity will be equal to 1, the other intensities will be expressed in ratio to this maximum.}
@@ -35,7 +35,7 @@ PredictLogReg(peaks,
   \item{noMatch}{a \code{numeric} value used to replace intensity values if there is no match detected between peaks and the set of shortlisted mass-over-charge values \code{moz}. It is fixed to 0 by default.}
 
    \item{Reference}{a \code{factor} with a length equal to the number of rows in \code{X} and containing the categories of each mass spectrum in \code{X}. \code{"NULL"} by default.}
- 
+
 }
 
 \value{Returns a \code{dataframe} containing probabilities of membership by category for each mass spectrum in \code{peaks}. The method used is provided in the \code{method} column. The \code{comb_fisher} method is the result of the Fisher's method when merging probabilities of membership of used prediction models.The \code{max_vote} method is the result of the maximum voting from used prediction models.
@@ -45,16 +45,16 @@ If the \code{Reference} parameter is not null, the function returns:
   \item{Confusion.Matrix}{a \code{list} of confusion matrix (cross-tabulation with associated statitics) corresponding to the output of the \code{confusionMatrix} function of the \code{caret} R package.}
 
   \item{Gobal.stat}{a \code{data.frame} with three columns corresponding to the value (\code{value} column) of a statistic parameter (\code{Statistic.parameter} column) from a method used (\code{model} column) obtained with the \code{LogReg} function. See \code{LogReg} function for the Statistic.parameter column.}
-  
+
   \item{Details.stat}{a \code{data.frame} with four columns corresponding to the same as \code{Gobal.stat} dataframe with the class concerned for estimated statistic parameter (class column). All statistic parameters are extracted from the output of the \code{confusionMatrix} function of the \code{caret} R package.}
-  
+
   \item{Correct.ClassificationFreq}{a \code{data.frame} with predicted class (Prediction column) from a method (Model column) and the reference of the categories of each mass spectrum (Reference column). The \code{Freq} column indicates the number of times the category was correctly predicted by the method.}
-  
+
   \item{Incorrect.ClassificationFreq}{a \code{data.frame} with predicted class (Prediction column) from a method (\code{Model} column) and the reference of the categories of each mass spectrum (\code{Reference} column). The \code{Freq} column indicates the number of times the category was not correctly predicted by the method. }
 
 }
 
-\details{The \code{PredictLogReg} function allows to predict the membership of a mass spectrum to a category from a multinomial logistic regression model. The mass spectrum from the \code{peaks} object will be matched to the discriminant mass-over-chage (m/z) values (\code{sel_moz} object from the \code{SelectionVar} function)  with a tolerance between two m/z defined by the \code{tolerance} parameter (by default this value is 6 Da). If a repetition of same m/z occurs in the selection, only the m/z that is closest in mass peaks (\code{moz}) is used. When no match, intensity values are replaced by the \code{noMatch} argument. If no m/z values from \code{peaks} object matched with the m/z in the object \code{moz}, the tolerance will be increased according to a numeric value defined in the \code{toleranceStep} parameter and a warning will be notified. Note that it is possible to not perform the \code{SelectionVar} function prior to the \code{PredictLogReg} function, and to replace the argument \code{moz} by all the m/z values present in a mass spectrum.}
+\details{The \code{PredictLogReg} function allows predicting the membership of a mass spectrum to a category from a multinomial regression model. The mass spectrum from the \code{peaks} object will be matched to the discriminant mass-over-chage (m/z) values (\code{sel_moz} object from the \code{SelectionVar} or \code{SelectionVarStat} functions)  with a tolerance between 2 m/z and defined by the \code{tolerance} parameter (by default this value is 6 Da). If a repetition of a same m/z occurs in the selection, only the m/z that is closest in mass peaks (\code{moz}) is used. When no match, intensity values are replaced by the \code{noMatch} argument. If no m/z values from \code{peaks} object matched with the m/z in the object \code{moz}, the tolerance will be increased according to a numeric value defined in the \code{toleranceStep} parameter and a warning will be notified. Note that it is possible to not perform the \code{SelectionVar} function prior to the \code{PredictLogReg} function, and to replace the argument \code{moz} by all the m/z values present in a mass spectrum.}
 
 \references{
 
@@ -91,8 +91,8 @@ Y <- factor(CitrobacterRKImetadata$Species)
 
 ###############################################################################
 ## 2. Selection of discriminant mass-over-charge values using RFERF
-# with 5 to 10 variables, 
-# without sampling method and trained 
+# with 5 to 10 variables,
+# without sampling method and trained
 # with the Accuracy coefficient metric
 
 a <- MSclassifR::SelectionVar(X,
@@ -109,8 +109,8 @@ sel_moz=a$sel_moz
 ###############################################################################
 ## 3. Perform LogReg from shortlisted discriminant mass-over-charge values
 
-# linear multinomial regression 
-# without sampling mehod and 
+# linear multinomial regression
+# without sampling mehod and
 # trained with the Kappa coefficient metric
 
 model_lm=MSclassifR::LogReg(X=X,
@@ -122,8 +122,8 @@ model_lm=MSclassifR::LogReg(X=X,
 # Estimated model:
 model_lm
 
-# nonlinear multinomial regression using neural networks 
-# with up-sampling method and 
+# nonlinear multinomial regression using neural networks
+# with up-sampling method and
 # trained with the Kappa coefficient metric
 
 model_nn=MSclassifR::LogReg(X=X,
@@ -137,8 +137,8 @@ model_nn=MSclassifR::LogReg(X=X,
 # Estimated model:
 model_nn
 
-# nonlinear multinomial regression using random forests 
-# without down-sampling method and 
+# nonlinear multinomial regression using random forests
+# without down-sampling method and
 # trained with the Kappa coefficient metric
 
 model_rf=MSclassifR::LogReg(X=X,
@@ -153,8 +153,8 @@ model_rf=MSclassifR::LogReg(X=X,
 # Estimated model:
 model_rf
 
-# nonlinear multinomial regression using xgboost 
-# with down-sampling method and 
+# nonlinear multinomial regression using xgboost
+# with down-sampling method and
 # trained with the Kappa coefficient metric
 
 model_xgb=MSclassifR::LogReg(X=X,
@@ -168,8 +168,8 @@ model_xgb=MSclassifR::LogReg(X=X,
 # Estimated model:
 model_xgb
 
-# nonlinear multinomial regression using svm 
-# with down-sampling method and 
+# nonlinear multinomial regression using svm
+# with down-sampling method and
 # trained with the Kappa coefficient metric
 
 model_svm=MSclassifR::LogReg(X=X,
@@ -183,10 +183,10 @@ model_svm=MSclassifR::LogReg(X=X,
 # Estimated model:
 model_svm
 
-# Of note, you can also load a model already saved 
+# Of note, you can also load a model already saved
 # (see example in LogReg function) for the next step
 ###############################################################################
-## 4. Probabilities of belonging to each category for the mass spectra 
+## 4. Probabilities of belonging to each category for the mass spectra
 ## and associated statitics
 
 # Collect all the estimated models in a list
@@ -203,6 +203,34 @@ prob_cat=MSclassifR::PredictLogReg(peaks = peaks[c(1:5)],
                                    moz = sel_moz,
                                    tolerance = 6,
                                    Reference = Y[c(1:5)])
+
+################################################################################
+## 5. Example of meta-classifiers based on several random forest models
+## to optimize a Kappa value using the SMOTE method for imbalanced datasets.
+## -> a merge of the prediction probabilities using the Fisher's method
+## leads generally to robust prediction models.
+
+#Selecting peaks with mda method
+a=SelectionVar(X,Y,MethodSelection="mda",Ntree=5*ncol(X))
+sel_moz=a$sel_moz
+
+#Building 4 Random Forest models
+models=NULL;nbm=4;
+for (i in 1:nbm){
+  model_rf=MSclassifR::LogReg(X=X,
+                             moz=sel_moz,
+                             Y=factor(Y),
+                             number=5,
+                             repeats=5,
+                             kind="rf",
+                             Metric = "Kappa",
+                             Sampling = "smote")
+  models <- c(models,list(model_rf$train_mod))
+}
+
+#Combining their prediction probabilities
+prob_cat=MSclassifR::PredictLogReg(peaks = peaks,model = models,moz = sel_moz,
+tolerance = 6,Reference = Y)
 
 }
 }
