@@ -54,17 +54,14 @@ importFrom("reshape2",
            "melt")
 importFrom("nnet", "nnet")
 importFrom("dplyr", "inner_join")
-importFrom("fuzzyjoin", "distance_left_join")
 importFrom("VSURF", "VSURF")
-importFrom("xgboost", 
+importFrom("xgboost",
            "xgb.DMatrix",
            "xgb.train")
 importFrom("e1071", "svm")
 importFrom("metap", "sumlog")
-importFrom("performanceEstimation", "smote")
 importFrom("mltools", "mcc")
 importFrom("mclust", "adjustedRandIndex")
-importFrom("UBL", "SmoteClassif")
 importFrom("car", "linearHypothesis")
 importFrom("limma",
            "eBayes",
@@ -78,6 +75,8 @@ importFrom("randomForest",
            "importance")
 importFrom("vita",
            "CVPVI")
+importFrom("Boruta",
+           "Boruta")
 
 
 

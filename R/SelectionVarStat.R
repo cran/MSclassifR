@@ -8,8 +8,8 @@ SelectionVarStat=function(X,
                           pi0.method="abh",
                           fdr=0.05,
                           Sampling = c("no", "up","down", "smote")){
-  
-  
+
+
   SamplingM <- match.arg(Sampling)
   switch(SamplingM, no = {
     message("No sampling method selected")
@@ -24,7 +24,7 @@ SelectionVarStat=function(X,
     message("Smote sampling method selected")
     mozv <- colnames(X)
     dataSMOTE <- data.frame(Y, X)
-    Smoted <- UBL::SmoteClassif(Y ~ ., dataSMOTE, C.perc = "balance")
+    Smoted <- smote_classif(Y ~ ., dataSMOTE, C.perc = "balance")
     X <- Smoted[, -1]
     X[is.na(X)] <- 0
     colnames(X) = mozv
@@ -56,7 +56,7 @@ SelectionVarStat=function(X,
   }
   if (stat.test == "Limma") {
     design = stats::model.matrix(~Y)
-    fit = limma::eBayes(limma::contrasts.fit(limma::lmFit(t(X), 
+    fit = limma::eBayes(limma::contrasts.fit(limma::lmFit(t(X),
                                                           design), ct), robust = TRUE)
     p.value_LIMMA = fit$F.p.value
     vp = p.value_LIMMA

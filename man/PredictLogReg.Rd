@@ -5,7 +5,7 @@
 \title{Prediction of the category to which a mass spectrum belongs from a multinomial logistic regression model}
 
 \description{
-This function predicts the category (species, phenotypes...) to which a mass spectrum belongs from a set of shortlisted mass-over-charge values of interest and a short-listed multinomial logistic regression model (see \code{\link{LogReg}}).
+This function predicts the category (species, phenotypes...) to which a mass spectrum belongs from a set of shortlisted mass-to-charge values of interest and a short-listed multinomial logistic regression model (see \code{\link{LogReg}}).
 }
 
 \usage{
@@ -22,17 +22,17 @@ PredictLogReg(peaks,
 \arguments{
   \item{peaks}{a list of \code{MassPeaks} objects (see \code{MALDIquant} R package).}
 
-  \item{model}{a model or a list of models estimated from a set of shortlisted mass-over-charge values (output of the \code{\link{LogReg}} function).}
+  \item{model}{a model or a list of models estimated from a set of shortlisted mass-to-charge values (output of the \code{\link{LogReg}} function).}
 
-  \item{moz}{a \code{vector} with the set of shortlisted mass-over-charge values used to estimate the model \code{Model}.}
+  \item{moz}{a \code{vector} with the set of shortlisted mass-to-charge values used to estimate the model \code{Model}.}
 
-  \item{tolerance}{a \code{numeric} value of accepted tolerance to match peaks to the set of shortlisted mass-over-charge values. It is fixed to 6 Da by default.}
+  \item{tolerance}{a \code{numeric} value of accepted tolerance to match peaks to the set of shortlisted mass-to-charge values. It is fixed to 6 Da by default.}
 
-   \item{toleranceStep}{a \code{numeric} value added to the \code{tolerance} parameter to match peaks to the set of shortlisted mass-over-charge values. It is fixed to 2 Da by default.}
+   \item{toleranceStep}{a \code{numeric} value added to the \code{tolerance} parameter to match peaks to the set of shortlisted mass-to-charge values. It is fixed to 2 Da by default.}
 
   \item{normalizeFun}{a \code{logical} value, if \code{TRUE} (default) the maximum intensity will be equal to 1, the other intensities will be expressed in ratio to this maximum.}
 
-  \item{noMatch}{a \code{numeric} value used to replace intensity values if there is no match detected between peaks and the set of shortlisted mass-over-charge values \code{moz}. It is fixed to 0 by default.}
+  \item{noMatch}{a \code{numeric} value used to replace intensity values if there is no match detected between peaks and the set of shortlisted mass-to-charge values \code{moz}. It is fixed to 0 by default.}
 
    \item{Reference}{a \code{factor} with a length equal to the number of rows in \code{X} and containing the categories of each mass spectrum in \code{X}. \code{"NULL"} by default.}
 
@@ -54,11 +54,16 @@ If the \code{Reference} parameter is not null, the function returns:
 
 }
 
-\details{The \code{PredictLogReg} function allows predicting the membership of a mass spectrum to a category from a multinomial regression model. The mass spectrum from the \code{peaks} object will be matched to the discriminant mass-over-chage (m/z) values (\code{sel_moz} object from the \code{SelectionVar} or \code{SelectionVarStat} functions)  with a tolerance between 2 m/z and defined by the \code{tolerance} parameter (by default this value is 6 Da). If a repetition of a same m/z occurs in the selection, only the m/z that is closest in mass peaks (\code{moz}) is used. When no match, intensity values are replaced by the \code{noMatch} argument. If no m/z values from \code{peaks} object matched with the m/z in the object \code{moz}, the tolerance will be increased according to a numeric value defined in the \code{toleranceStep} parameter and a warning will be notified. Note that it is possible to not perform the \code{SelectionVar} function prior to the \code{PredictLogReg} function, and to replace the argument \code{moz} by all the m/z values present in a mass spectrum.}
+\details{The \code{PredictLogReg} function allows predicting the membership of a mass spectrum to a category from a multinomial regression model. The mass spectrum from the \code{peaks} object will be matched to the discriminant mass-to-chage (m/z) values (\code{sel_moz} object from the \code{SelectionVar} or \code{SelectionVarStat} functions)  with a tolerance between 2 m/z and defined by the \code{tolerance} parameter (by default this value is 6 Da). If a repetition of a same m/z occurs in the selection, only the m/z that is closest in mass peaks (\code{moz}) is used. When no match, intensity values are replaced by the \code{noMatch} argument. If no m/z values from \code{peaks} object matched with the m/z in the object \code{moz}, the tolerance will be increased according to a numeric value defined in the \code{toleranceStep} parameter and a warning will be notified. Note that it is possible to not perform the \code{SelectionVar} function prior to the \code{PredictLogReg} function, and to replace the argument \code{moz} by all the m/z values present in a mass spectrum.
+
+Godmer et al. (2025) presents a comparison of different pipelines using PredictLogReg that can help you to optimize your workflow. For a comprehensive guide, additional applications, and detailed examples of using this package, please visit our GitHub repository: \href{https://github.com/agodmer/MSclassifR_examples}{here}.
+}
 
 \references{
 
 Kuhn, M. (2008). Building predictive models in R using the caret package. Journal of statistical software, 28(1), 1-26.
+
+Alexandre Godmer, Yahia Benzerara, Emmanuelle Varon, Nicolas Veziris, Karen Druart, Renaud Mozet, Mariette Matondo, Alexandra Aubry, Quentin Giai Gianetto, MSclassifR: An R package for supervised classification of mass spectra with machine learning methods, Expert Systems with Applications, Volume 294, 2025, 128796, ISSN 0957-4174, \doi{10.1016/j.eswa.2025.128796}.
 
 }
 
@@ -77,7 +82,7 @@ data("CitrobacterRKIspectra","CitrobacterRKImetadata", package = "MSclassifR")
 spectra <- SignalProcessing(CitrobacterRKIspectra)
 # detection of peaks in pre-processed mass spectra
 peaks <- MSclassifR::PeakDetection(x = spectra, averageMassSpec=FALSE)
-# matrix with intensities of peaks arranged in rows (each column is a mass-over-charge value)
+# matrix with intensities of peaks arranged in rows (each column is a mass-to-charge value)
 IntMat <- MALDIquant::intensityMatrix(peaks)
 rownames(IntMat) <- paste(CitrobacterRKImetadata$Strain_name_spot)
 # remove missing values in the matrix
@@ -90,7 +95,7 @@ X <- t(IntMat)
 Y <- factor(CitrobacterRKImetadata$Species)
 
 ###############################################################################
-## 2. Selection of discriminant mass-over-charge values using RFERF
+## 2. Selection of discriminant mass-to-charge values using RFERF
 # with 5 to 10 variables,
 # without sampling method and trained
 # with the Accuracy coefficient metric
@@ -107,7 +112,7 @@ a <- MSclassifR::SelectionVar(X,
 sel_moz=a$sel_moz
 
 ###############################################################################
-## 3. Perform LogReg from shortlisted discriminant mass-over-charge values
+## 3. Perform LogReg from shortlisted discriminant mass-to-charge values
 
 # linear multinomial regression
 # without sampling mehod and

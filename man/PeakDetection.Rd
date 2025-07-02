@@ -33,9 +33,9 @@ PeakDetection(x,
   \item{averageMassSpectraMethod}{a \code{character} indicating the method used to average mass spectra according to labels. It is fixed to \code{"median"} by default.This function can be replaced by another mathematical function such as \code{"mean"}. See \code{averageMassSpectra} of \code{MALDIquant} R package.}
 
   \item{PeakDetectionMethod}{a \code{character} indicating the noise estimation method. It uses \code{"MAD"} method for \code{list} of \code{MassSpectrum} objects. This noise estimation method estimation method can be remplaced \code{"SuperSmoother"}. See \code{estimateNoise-methods} of the \code{MALDIquant} R package for details.}
-  
+
   \item{SNRdetection}{a \code{numeric} value indicating the signal-to-noise ratio used to detect peaks (by default = {\code{3}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
-  
+
   \item{binPeaks}{a \code{logical} value indicating the peaks are aligned in discrete bins. It is fixed to \code{"TRUE"} by default. See \code{binPeaks} of the \code{MALDIquant} R package for details.}
 
   \item{halfWindowSizeDetection}{a \code{numeric} value half window size to detect peaks (by default = {\code{11}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
@@ -53,6 +53,8 @@ PeakDetection(x,
 Gibb S, Strimmer K. MALDIquant: a versatile R package for the analysis of mass spectrometry data. Bioinformatics. 2012 Sep 1;28(17):2270-1. \doi{10.1093/bioinformatics/bts447}. Epub 2012 Jul 12. PMID: 22796955.
 
 Javier Palarea-Albaladejo, Kevin Mclean, Frank Wright, David G E Smith, MALDIrppa: quality control and robust analysis for mass spectrometry data, Bioinformatics, Volume 34, Issue 3, 01 February 2018, Pages 522 - 523, \doi{https://doi.org/10.1093/bioinformatics/btx628}
+
+Alexandre Godmer, Yahia Benzerara, Emmanuelle Varon, Nicolas Veziris, Karen Druart, Renaud Mozet, Mariette Matondo, Alexandra Aubry, Quentin Giai Gianetto, MSclassifR: An R package for supervised classification of mass spectra with machine learning methods, Expert Systems with Applications, Volume 294, 2025, 128796, ISSN 0957-4174, \doi{10.1016/j.eswa.2025.128796}.
 }
 
 \details{

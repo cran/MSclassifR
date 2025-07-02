@@ -39,24 +39,24 @@ SignalProcessing(x,
 
   \item{removeBaseline_iterations}{a \code{numeric} value indicting the number of iterations to remove baseline (by default = {\code{25}}). See \code{removeBaseline-methods} of the \code{MALDIquant} R package for details.}
 
-  \item{calibrateIntensity_method}{a \code{character} indicating the intensities calibration method used (\code{"TIC"} method by default).  This calibration method can be remplaced by \code{"PQN"} or {"median"}.See \code{calibrateIntensity-methods} of the \code{MALDIquant} R package for details.}
+  \item{calibrateIntensity_method}{a \code{character} indicating the intensities calibration method used (\code{"TIC"} method by default).  This calibration method can be remplaced by \code{"PQN"} or \code{"median"}.See \code{calibrateIntensity-methods} of the \code{MALDIquant} R package for details.}
 
    \item{alignSpectra_NoiseMethod}{a \code{character} indicating the noise estimation method. It uses \code{"MAD"} method for \code{list} of \code{MassSpectrum} objects. This noise estimation method estimation method can be remplaced \code{"SuperSmoother"}. See \code{estimateNoise-methods} of the \code{MALDIquant} R package for details.}
-  
+
   \item{alignSpectra_method}{a \code{character} indicating the warping method. It uses \code{"lowess"} method for \code{list} of \code{MassSpectrum} objects. This warping method method can be remplaced \code{"linear"}, \code{"quadratic"} or \code{"cubic"} . See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
-  
+
   \item{alignSpectra_halfWs}{a \code{numeric} value half window size to detect peaks (by default = {\code{11}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
 
   \item{alignSpectra_SN}{a \code{numeric} value indicating the signal-to-noise ratio used to detect peaks (by default = {\code{3}}). See \code{detectPeaks-methods} of the \code{MALDIquant} R package for details.}
-  
+
   \item{tolerance_align}{a \code{numeric} value indicating a maximal relative deviation of a peak position (mass) to be considered as identical in ppm (by default = \code{0.002}). See \code{determineWarpingFunctions} of the \code{MALDIquant} R package for details.}
 
   \item{referenceSpectra}{a \code{MassPeaks} reference spectrum for alignment of the sample(s). If this reference spectrum is not provided, a reference spectrum is created using the \code{minFrequency} and \code{binPeaks_method} arguments. See \code{referencePeaks} of the \code{MALDIquant} R package for details.}
-  
+
   \item{minFrequency}{a \code{numeric} minimum frequency for each peak over all analyzed spectra (by default = \code{0.5}) for the creation of the reference spectrum. See \code{referencePeaks} of the \code{MALDIquant} R package for details.}
-  
+
   \item{binPeaks_method}{a \code{character} indicating the method used to equalize masses for similar peaks for the creation of the reference spectrum. The \code{"strict"} method is used by default corresponding to a unique peak per bin from the same sample. This method can be remplaced by \code{"relaxed"} corresponding to multiple peaks per bin from the same sample. See \code{binPeaks} of the \code{MALDIquant} R package for more details.}
-  
+
   \item{keepReferenceSpectra}{a \code{logical} value indicating if the created reference spectrum is returned by the function (\code{FALSE}, default).}
 
   \item{...}{other arguments from \code{MALDIrppa} packages for the \code{wavSmoothing} function such as \code{n.levels} (corresponding to the depth of the decomposiion for the wavelet function). See \code{wavSmoothing} of the \code{MALDIrppa} R package for details.}
@@ -71,6 +71,8 @@ Gibb S, Strimmer K. MALDIquant: a versatile R package for the analysis of mass s
 
 Javier Palarea-Albaladejo, Kevin Mclean, Frank Wright, David G E Smith, MALDIrppa: quality control and robust analysis for mass spectrometry data, Bioinformatics, Volume 34, Issue 3, 01 February 2018, Pages 522 - 523, \doi{https://doi.org/10.1093/bioinformatics/btx628}
 
+Alexandre Godmer, Yahia Benzerara, Emmanuelle Varon, Nicolas Veziris, Karen Druart, Renaud Mozet, Mariette Matondo, Alexandra Aubry, Quentin Giai Gianetto, MSclassifR: An R package for supervised classification of mass spectra with machine learning methods, Expert Systems with Applications, Volume 294, 2025, 128796, ISSN 0957-4174, \doi{10.1016/j.eswa.2025.128796}.
+
 }
 
 
@@ -81,6 +83,8 @@ The \code{SignalProcessing} function provides an analysis pipeline for \code{Mas
 The \code{Wavelet} method relies on the \code{wavShrink} function of the \code{wmtsa} package and its dependencies (now archived by CRAN). The original C code by William Constantine and Keith L. Davidson, in turn including copyrighted routines by Insightful Corp., has been revised and included into \code{MALDIrppa} for the method to work.
 
 All the methods used for \code{SignalProcessing} functions are selected from \code{MALDIquant} and \code{MALDIrppa} packages.
+
+Godmer et al. (2025) presents a comparison of different pre-processing workflows that can help you to optimize your workflow.For a comprehensive guide, additional applications, and detailed examples of using this package, please visit our GitHub repository: \href{https://github.com/agodmer/MSclassifR_examples}{here}.
 }
 
 

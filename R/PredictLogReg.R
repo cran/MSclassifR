@@ -11,7 +11,7 @@ PredictLogReg <-  function (peaks,
                             normalizeFun = TRUE,
                             noMatch = 0,
                             Reference = NULL){
-  
+
     if (length(unique(names(peaks))) != length(peaks) && is.null(names(peaks)) == FALSE) {
       stop("Each element of X must have a unique name !")
     }
@@ -37,14 +37,14 @@ PredictLogReg <-  function (peaks,
         method[i] = Modell$method
         Peak[[i]] <- data.frame(X_var = Peaks[[i]]@mass,intensity = Peaks[[i]]@intensity)
         s_moz <- data.frame(X_var = unique(sort(as.numeric(Moz))))
-        DF.match[[i]] <- fuzzyjoin::distance_left_join(s_moz,Peak[[i]], by = "X_var", max_dist = Tolerance)
+        DF.match[[i]] <- d_left_join(s_moz,Peak[[i]], by = "X_var", max_dist = Tolerance)
         if (sum(is.na(DF.match[[i]]$X_var.y)) == nrow(DF.match[[i]])) {
-          warning("No m/z from peaks object matched with the m/z in the moz objet,\n                
+          warning("No m/z from peaks object matched with the m/z in the moz objet,\n
                   the tolerance has been increased by steps indicated in toleranceStep argument Da")
           Tolerance.step <- Tolerance
           while (sum(is.na(DF.match[[i]]$X_var.y)) == nrow(DF.match[[i]])) {
             Tolerance.step <- Tolerance.step + toleranceStep
-            DF.match[[i]] <- fuzzyjoin::distance_left_join(s_moz,Peak[[i]], by = "X_var", max_dist = Tolerance.step)
+            DF.match[[i]] <- d_left_join(s_moz,Peak[[i]], by = "X_var", max_dist = Tolerance.step)
             Tolerance.step <- Tolerance.step
           }
           message(paste(c("tolerance found for match =",Tolerance.step)))
@@ -74,7 +74,7 @@ PredictLogReg <-  function (peaks,
       }
       Results <- do.call("rbind", prediction)
       Results = cbind(name, method, Results)
-      rownames(Results) = paste(1:nrow(Results), ".", 
+      rownames(Results) = paste(1:nrow(Results), ".",
                                 sep = "")
       NameStrain <- rep(names(peaks), nlevels(factor(method)))
       if (is.null(names(peaks))) {
@@ -90,8 +90,8 @@ PredictLogReg <-  function (peaks,
     }
     res = NULL
     for (i in 1:length(model)) {
-      res1 = predi(Peaks = peaks, Modell = model[[i]], Moz = as.numeric(moz), 
-                   Tolerance = tolerance, NormalizeFun = normalizeFun, 
+      res1 = predi(Peaks = peaks, Modell = model[[i]], Moz = as.numeric(moz),
+                   Tolerance = tolerance, NormalizeFun = normalizeFun,
                    noMatch = noMatch)
       res1$method=paste(res1$method,i,sep="_")
       res = rbind(res, res1)
@@ -169,20 +169,20 @@ PredictLogReg <-  function (peaks,
       }
       MatthewCorrelation.dfa <- lapply(Model_prediction, function(x) mltools::mcc(x,RefT))
       MatthewCorrelation.dfb <- do.call("cbind.data.frame",MatthewCorrelation.dfa)
-      MatthewCorrelation.df <- cbind.data.frame(value = as.numeric(MatthewCorrelation.dfb[1,]), 
+      MatthewCorrelation.df <- cbind.data.frame(value = as.numeric(MatthewCorrelation.dfb[1,]),
                                                 L1 = colnames(MatthewCorrelation.dfb), Statistic.param = "MatthewCorrelation")
       AdjustedRank.Index.dfa <- lapply(Model_prediction, function(x){mclust::adjustedRandIndex(x,RefT);})
       AdjustedRank.Index.dfb <- do.call("cbind.data.frame",AdjustedRank.Index.dfa)
-      AdjustedRank.Index.df <- cbind.data.frame(value = as.numeric(AdjustedRank.Index.dfb[1,]), 
+      AdjustedRank.Index.df <- cbind.data.frame(value = as.numeric(AdjustedRank.Index.dfb[1,]),
                                                 L1 = colnames(AdjustedRank.Index.dfb), Statistic.param = "AdjustedRank.Index")
       Global.stats <- rbind.data.frame(Global.stats, MatthewCorrelation.df,AdjustedRank.Index.df)
       colnames(Global.stats) <- c("Value", "Model","Statistic.parameter")
       KeepStats <- c("Accuracy", "Kappa", "MatthewCorrelation","AdjustedRank.Index")
       Global.stats <- Global.stats[Global.stats$Statistic.parameter %in% KeepStats, ]
       rownames(Global.stats) = NULL
-      results = list(Prob.results = res, Confusion.Matrix = Confusion.Matrix, 
-                     Global.stats = Global.stats, Details.stats = Details.stats, 
-                     Correct.ClassificationFreq = Correct.ClassificationFreq, 
+      results = list(Prob.results = res, Confusion.Matrix = Confusion.Matrix,
+                     Global.stats = Global.stats, Details.stats = Details.stats,
+                     Correct.ClassificationFreq = Correct.ClassificationFreq,
                      Incorrect.ClassificationFreq = Incorrect.ClassificationFreq)
     }
     else {
