@@ -1,4 +1,17 @@
-exportPattern("^[[:alpha:]]+")
+export(PeakDetection)
+export(build_X_from_peaks_fast)
+export(build_XY_from_peaks)
+export(PredictLogReg)
+export(PredictFastClass)
+export(SelectionVar)
+export(SelectionVarStat)
+export(PlotSpectra)
+export(fast_mda)
+export(fast_cvpvi)
+export(LogReg)
+export(LogReg_rf_fast)
+export(SignalProcessing)
+export(smote_classif)
 importFrom("MALDIquant",
            "calibrateIntensity",
            "transformIntensity",
@@ -11,10 +24,7 @@ importFrom("MALDIquant",
            "match.closest",
            "intensityMatrix",
            "createMassPeaks")
-importFrom("MALDIrppa",
-           "wavSmoothing")
-importFrom("MALDIquantForeign",
-           "importBrukerFlex")
+importFrom("MALDIrppa", "wavSmoothing")
 importFrom("stats",
            "aggregate",
            "predict",
@@ -27,6 +37,7 @@ importFrom("stats",
            "model.matrix",
            "ecdf",
            "quantile",
+	         "setNames",
            "runif")
 importFrom("ggplot2",
            "ggplot",
@@ -35,10 +46,6 @@ importFrom("ggplot2",
            "facet_wrap",
            "theme_bw",
            "xlab")
-importFrom("mixOmics",
-           "splsda",
-           "color.mixo",
-           "plotLoadings")
 importFrom("caret",
            "createDataPartition",
            "confusionMatrix",
@@ -49,34 +56,13 @@ importFrom("caret",
            "rfFuncs",
            "upSample",
            "downSample")
-importFrom("glmnet","glmnet")
-importFrom("reshape2",
-           "melt")
-importFrom("nnet", "nnet")
-importFrom("dplyr", "inner_join")
-importFrom("VSURF", "VSURF")
-importFrom("xgboost",
-           "xgb.DMatrix",
-           "xgb.train")
-importFrom("e1071", "svm")
-importFrom("metap", "sumlog")
-importFrom("mltools", "mcc")
-importFrom("mclust", "adjustedRandIndex")
-importFrom("car", "linearHypothesis")
-importFrom("limma",
-           "eBayes",
-           "contrasts.fit")
-importFrom("cp4p",
-           "adjust.p",
-           "estim.pi0")
+importFrom("reshape2","melt")
+importFrom("dplyr","inner_join")
+importFrom("car","linearHypothesis")
+importFrom("limma","eBayes","contrasts.fit")
+importFrom("cp4p","adjust.p","estim.pi0")
 import("statmod")
-importFrom("randomForest",
-           "randomForest",
-           "importance")
-importFrom("vita",
-           "CVPVI")
-importFrom("Boruta",
-           "Boruta")
-
-
-
+importFrom("Rcpp","evalCpp")
+importFrom("Matrix","Matrix","sparseMatrix")
+importFrom("methods","as")
+useDynLib(MSclassifR, .registration = TRUE)

@@ -1,201 +1,149 @@
-smote_classif <- function(form, dat, C.perc = "balance", k = 5, repl = FALSE,
-                          dist = "Euclidean", p = 2) {
-  # Fast SMOTE implementation for classification problems
-  #
-  # Args:
-  #   form: a model formula
-  #   dat: the original training set (with the unbalanced distribution)
-  #   C.perc: named list with percentages of under/over-sampling, or "balance"/"extreme"
-  #   k: number of neighbors to consider
-  #   repl: logical, whether to perform sampling with replacement
-  #   dist: distance measure ("Euclidean", "Manhattan", "Chebyshev", etc.)
-  #   p: parameter used when a p-norm is computed
-  #
-  # Returns: a new data frame modified through the SMOTE algorithm
-
-  # Input validation
-  if (any(is.na(dat))) {
-    stop("The data set provided contains NA values!")
-  }
-
-  # Find target variable position
-  tgt <- which(names(dat) == as.character(form[[2]]))
-  if (length(tgt) == 0) {
-    stop("Target variable not found in data")
-  }
-
-  # Extract target and convert to factor if needed
-  y_col <- dat[[tgt]]
-  if (!is.factor(y_col)) y_col <- as.factor(y_col)
-  dat[[tgt]] <- y_col
-
-  # Get class information
-  class_names <- levels(y_col)
-  class_counts <- tabulate(as.integer(y_col))
-  names(class_counts) <- class_names
-
-  # Handle columns rearrangement efficiently
-  needs_reordering <- (tgt < ncol(dat))
-  if (needs_reordering) {
-    original_order <- names(dat)
-    # Move target to end (more efficient for processing)
-    dat <- dat[, c(setdiff(seq_len(ncol(dat)), tgt), tgt)]
-  }
-
-  # Determine sampling strategy (vectorized operations)
-  if (is.list(C.perc)) {
-    # User-specified sampling
-    sampling_factors <- rep(1, length(class_names))
-    names(sampling_factors) <- class_names
-
-    for (cls in names(C.perc)) {
-      if (cls %in% class_names) sampling_factors[cls] <- C.perc[[cls]]
-    }
-  } else if (C.perc == "balance") {
-    # Balance classes
-    target_size <- round(sum(class_counts)/length(class_counts), 0)
-    sampling_factors <- target_size / class_counts
-    names(sampling_factors) <- class_names
-  } else if (C.perc == "extreme") {
-    # Extreme balancing
-    med <- sum(class_counts)/length(class_counts)
-    target_sizes <- round(med^2/class_counts * sum(class_counts)/sum(med^2/class_counts), 0)
-    sampling_factors <- target_sizes / class_counts
-    names(sampling_factors) <- class_names
-  } else {
-    stop("Please provide a list with classes to under-/over-sample or indicate 'balance' or 'extreme'.")
-  }
-
-  # Use list to collect results (more efficient than rbind in a loop)
-  result_chunks <- list()
-  chunk_index <- 1
-
-  # Fast categorization of classes
-  under_classes <- names(sampling_factors)[sampling_factors < 1]
-  over_classes <- names(sampling_factors)[sampling_factors > 1]
-  same_classes <- names(sampling_factors)[sampling_factors == 1]
-
-  # Process unchanged classes (vectorized)
-  if (length(same_classes) > 0) {
-    same_indices <- which(dat[[ncol(dat)]] %in% same_classes)
-    if (length(same_indices) > 0) {
-      result_chunks[[chunk_index]] <- dat[same_indices, , drop = FALSE]
-      chunk_index <- chunk_index + 1
+#' SMOTE for classification datasets
+#'
+#' Generate synthetic examples for minority classes using the SMOTE idea,
+#' to balance a classification dataset.
+#'
+#' The function supports multi-class data. With strategy = "balance" (default),
+#' each class is oversampled up to the size of the largest class. With
+#' strategy = "perc", each class c is oversampled by round(n_c * perc/100).
+#' Neighbors are computed within each class.
+#'
+#' @param formula A model formula target ~ predictors indicating the response and predictors.
+#' @param data A data.frame containing the variables in the model.
+#' @param k Integer, number of nearest neighbors used by SMOTE (default 5).
+#' @param strategy One of "balance" (oversample to the max class size) or "perc"
+#'   (oversample each class by a percentage). Default "balance".
+#' @param perc Numeric percentage used when strategy = "perc" (e.g., 100 means
+#'   generate as many synthetic examples as existing in the class). Ignored for "balance".
+#' @param metric Distance metric for neighbor search: one of
+#'   "euclidean", "manhattan", "chebyshev", "canberra", "overlap", "heom", "hvdm", "pnorm".
+#'   Default "euclidean".
+#' @param p Numeric p for the p-norm when metric = "pnorm"; also used implicitly for
+#'   "euclidean" (p=2) and "manhattan" (p=1). Default 2.
+#' @param seed Optional integer seed for reproducibility.
+#' @param C.perc Deprecated. Backward-compatibility alias for oversampling
+#'   control. If character "balance", mapped to strategy = "balance".
+#'   If a single numeric, mapped to strategy = "perc" and perc = C.perc.
+#'   Other forms are ignored with a warning.
+#'
+#' @return A data.frame with synthetic rows appended, same columns and types as input.
+#'
+#' @examples
+#' \donttest{
+#' data(iris)
+#' imbal_iris <- iris[c(1:40, 51:100, 101:110), ]
+#' table(imbal_iris$Species)
+#' balanced_iris <- smote_classif(Species ~ ., imbal_iris)
+#' table(balanced_iris$Species)
+#' }
+#'
+#' @export
+smote_classif <- function(formula, data,
+                          k = 5,
+                          strategy = c("balance", "perc"),
+                          perc = NULL,
+                          metric = c("euclidean", "manhattan", "chebyshev", "canberra",
+                                     "overlap", "heom", "hvdm", "pnorm"),
+                          p = 2,
+                          seed = NULL,
+                          C.perc = NULL) {
+  # Map deprecated C.perc to new args if present
+  if (!is.null(C.perc)) {
+    if (is.character(C.perc) && length(C.perc) == 1 && identical(tolower(C.perc), "balance")) {
+      strategy <- "balance"
+    } else if (is.numeric(C.perc) && length(C.perc) == 1) {
+      strategy <- "perc"
+      perc <- as.numeric(C.perc)
+    } else {
+      warning("C.perc is deprecated; use strategy='balance' or strategy='perc' + perc=<number>.")
     }
   }
 
-  # Process undersampled classes (vectorized where possible)
-  if (length(under_classes) > 0) {
-    for (cls in under_classes) {
-      cls_indices <- which(dat[[ncol(dat)]] == cls)
-      if (length(cls_indices) > 0) {
-        sample_size <- max(1, round(sampling_factors[cls] * length(cls_indices)))
-        selected <- sample(cls_indices, sample_size, replace = repl)
-        result_chunks[[chunk_index]] <- dat[selected, , drop = FALSE]
-        chunk_index <- chunk_index + 1
-      }
+  strategy <- match.arg(strategy)
+  metric   <- match.arg(metric)
+  if (!is.null(seed)) set.seed(seed)
+
+  # Build model frame (drops rows with NA)
+  mf <- stats::model.frame(formula, data = data, na.action = stats::na.omit)
+  if (ncol(mf) < 2) stop("Formula must be of the form target ~ predictors.")
+
+  # Target and predictors
+  target_name <- names(mf)[1]
+  y <- mf[[1]]
+  if (!is.factor(y)) y <- factor(y)
+  X <- mf[-1]
+
+  # Coerce character predictors to factors
+  is_char <- vapply(X, is.character, logical(1))
+  if (any(is_char)) X[is_char] <- lapply(X[is_char], factor)
+
+  # Metric mapping to p_code
+  p_code <- switch(metric,
+                   euclidean = 2,
+                   manhattan = 1,
+                   chebyshev = 0,
+                   canberra  = -1,
+                   overlap   = -2,
+                   heom      = -3,
+                   hvdm      = -4,
+                   pnorm     = if (p <= 0) stop("p must be > 0 for pnorm") else p)
+
+  # Class sizes
+  tbl <- table(y)
+  max_n <- max(tbl)
+
+  # Helper to generate synthetic rows for one class
+  synth_one_class <- function(cls, n_new) {
+    if (n_new <= 0) return(mf[0, , drop = FALSE])
+
+    idx <- which(y == cls)
+    df_c <- X[idx, , drop = FALSE]
+    y_c  <- y[idx, drop = TRUE]
+    n_c <- length(idx)
+
+    if (n_c <= 1) {
+      samp <- df_c[rep(1, n_new), , drop = FALSE]
+      out <- cbind(samp, setNames(data.frame(factor(rep(cls, n_new), levels = levels(y))), target_name))
+      return(out)
     }
-  }
 
-  # Map distance metric to code (more efficient switch)
-  p_code <- switch(dist,
-                   "Chebyshev" = 0,
-                   "Manhattan" = 1,
-                   "Euclidean" = 2,
-                   "Canberra" = -1,
-                   "Overlap" = -2,
-                   "HEOM" = -3,
-                   "HVDM" = -4,
-                   "p-norm" = p,
-                   stop("Distance measure not available!"))
-
-  # Process oversampled classes (optimized)
-  if (length(over_classes) > 0) {
-    for (cls in over_classes) {
-      cls_indices <- which(dat[[ncol(dat)]] == cls)
-      n_minority <- length(cls_indices)
-
-      if (n_minority == 0) {
-        next
-      } else if (n_minority == 1) {
-        # One example case - create replicas (vectorized)
-        warning(paste("SmoteClassif: Unable to use SMOTE with 1 example of class", cls,
-                      "- creating replicas instead."), call. = FALSE)
-
-        n_replicas <- ceiling(sampling_factors[cls] - 1)
-        if (n_replicas > 0) {
-          replicated_data <- dat[rep(cls_indices, n_replicas), , drop = FALSE]
-          result_chunks[[chunk_index]] <- replicated_data
-          chunk_index <- chunk_index + 1
-        }
-
-        # Add original
-        result_chunks[[chunk_index]] <- dat[cls_indices, , drop = FALSE]
-        chunk_index <- chunk_index + 1
-
-      } else if (n_minority <= k) {
-        # Small minority class case
-        adjusted_k <- n_minority - 1
-        warning(paste("SmoteClassif: Class", cls, "has only", n_minority,
-                      "examples. Using k =", adjusted_k, "for nearest neighbors."), call. = FALSE)
-
-        minority_data <- dat[cls_indices, , drop = FALSE]
-
-        # Generate synthetic examples
-        to_generate <- ceiling((sampling_factors[cls] - 1) * n_minority)
-        if (to_generate > 0) {
-          synthetic_data <- fast_generate_synthetic(
-            minority_data,
-            adjusted_k,
-            to_generate,
-            p_code
-          )
-
-          result_chunks[[chunk_index]] <- synthetic_data
-          chunk_index <- chunk_index + 1
-        }
-
-        # Add original examples
-        result_chunks[[chunk_index]] <- minority_data
-        chunk_index <- chunk_index + 1
-
-      } else {
-        # Normal case - enough examples
-        minority_data <- dat[cls_indices, , drop = FALSE]
-
-        # Generate synthetic examples
-        to_generate <- ceiling((sampling_factors[cls] - 1) * n_minority)
-        if (to_generate > 0) {
-          synthetic_data <- fast_generate_synthetic(
-            minority_data,
-            k,
-            to_generate,
-            p_code
-          )
-
-          result_chunks[[chunk_index]] <- synthetic_data
-          chunk_index <- chunk_index + 1
-        }
-
-        # Add original examples
-        result_chunks[[chunk_index]] <- minority_data
-        chunk_index <- chunk_index + 1
-      }
+    k_use <- min(k, n_c - 1)
+    if (k_use < 1) {
+      samp <- df_c[sample.int(n_c, n_new, replace = TRUE), , drop = FALSE]
+      out <- cbind(samp, setNames(data.frame(factor(rep(cls, n_new), levels = levels(y))), target_name))
+      return(out)
     }
+
+    dat_c <- df_c
+    dat_c[[target_name]] <- y_c
+
+    syn <- fast_generate_synthetic(dat = dat_c, k = k_use, n = n_new, p_code = p_code)
+
+    if (any(is_char)) {
+      for (nm in names(X)[is_char]) syn[[nm]] <- as.character(syn[[nm]])
+    }
+
+    syn <- syn[c(names(X), target_name)]
+    syn
   }
 
-  # Combine results efficiently
-  if (length(result_chunks) == 0) {
-    warning("No data generated. Check your parameters.")
-    return(dat)
+  # How many to generate per class
+  add_list <- vector("list", length = length(levels(y)))
+  names(add_list) <- levels(y)
+
+  for (cls in levels(y)) {
+    n_c <- as.integer(tbl[cls])
+    n_new <- if (strategy == "balance") {
+      max_n - n_c
+    } else {
+      if (is.null(perc)) stop("Provide 'perc' when strategy = 'perc'.")
+      round(n_c * perc / 100)
+    }
+    add_list[[cls]] <- synth_one_class(cls, n_new)
   }
 
-  newdata <- do.call(rbind, result_chunks)
-
-  # Restore original column order if needed
-  if (needs_reordering) {
-    newdata <- newdata[, original_order]
-  }
-
-  return(newdata)
+  synthetic <- do.call(rbind, add_list)
+  out <- rbind(cbind(X, setNames(data.frame(y), target_name)), synthetic)
+  rownames(out) <- NULL
+  out
 }

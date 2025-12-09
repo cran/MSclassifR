@@ -2,10 +2,10 @@
 
 \alias{SelectionVar}
 
-\title{Variable selection using random forests, logistic regression methods or sparse partial least squares discriminant analysis (sPLS-DA).}
+\title{Variable selection using methods based on random forests and others.}
 
 \description{
-This function performs variable selection (i.e. selection of discriminant mass-to-charge values) using either recursive feature elimination (RFE) algorithm with Random Forest, or logistic regression model, or sparse partial least squares discriminant analysis (sPLS-DA) or methods based on the distribution of variable importances of random forests.
+This function performs variable selection (i.e. selection of discriminant mass-to-charge values) using several selection methods (see \code{MethodSelection} argument).
 }
 
 \usage{

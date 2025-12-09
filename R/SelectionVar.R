@@ -1,426 +1,336 @@
+SelectionVar <- function(X, Y,
+                         MethodSelection = c("RFERF", "RFEGlmnet", "VSURF", "sPLSDA", "mda", "cvp", "boruta"),
+                         MethodValidation = c("cv", "repeatedcv", "LOOCV"),
+                         PreProcessing = c("center", "scale", "nzv", "corr"),
+                         Metric = c("Kappa", "Accuracy"),
+                         Sampling = c("no", "up","down", "smote"),
+                         NumberCV = NULL, RepeatsCV = NULL,
+                         Sizes,
+                         Ntree = 1000,
+                         ncores = 2,
+                         threshold = 0.01,
+                         ncomp.max = 10,
+                         nbf = 0) {
+  # Silence codetools NOTE for sPLSDA branch
+  cp <- NULL
+  UniqueVariables_keep <- NULL
 
-SelectionVar=function(X,
-                       Y,
-                       MethodSelection = c("RFERF", "RFEGlmnet", "VSURF", "sPLSDA", "mda", "cvp", "boruta"),
-                       MethodValidation = c("cv", "repeatedcv", "LOOCV"),
-                       PreProcessing = c("center", "scale", "nzv", "corr"),
-                       Metric = c("Kappa", "Accuracy"),
-                       Sampling = c("no", "up","down", "smote"),
-                       NumberCV = NULL, RepeatsCV = NULL,
-                       Sizes,
-                       Ntree = 1000,
-                       ncores = 2,
-                       threshold = 0.01,
-                       ncomp.max = 10,
-                       nbf=0){
+  # Cap cores for CRAN and safety
+  ncores_eff <- .limited_cores(ncores)
 
-  # Methode for preprocess the data (method)
-  methodProcess <- PreProcessing
+  # 0) Make inputs modeling-safe
+  if (inherits(X, "Matrix")) X <- as.matrix(X)
+  X <- as.matrix(X)
+  storage.mode(X) <- "double"
+  if (anyNA(X)) X[is.na(X)] <- 0
+  Y <- factor(Y)
 
-  # Method for training data
-  methodValid <- MethodValidation
-
-  # Define the method
+  # 1) Match user choices
+  method <- match.arg(MethodSelection)
+  methodValid <- match.arg(MethodValidation)
+  Metric <- match.arg(Metric)
   SamplingM <- match.arg(Sampling)
 
+  # 2) Sensible defaults for CV
+  if (methodValid == "cv") {
+    if (is.null(NumberCV)) NumberCV <- 5L
+    RepeatsCV <- NULL
+  } else if (methodValid == "repeatedcv") {
+    if (is.null(NumberCV)) NumberCV <- 5L
+    if (is.null(RepeatsCV)) RepeatsCV <- 3L
+  } else { # LOOCV
+    NumberCV <- NULL
+    RepeatsCV <- NULL
+  }
+
+  # 3) Sampling
   switch(SamplingM,
-
-         "no" = {
-           message("No sampling method selected")
-           X=X; Y=Y;},
-
-         ## Up
-
+         "no" = { message("No sampling method selected") },
          "up" = {
            message("Up sampling method selected")
-           upTrain <- caret::upSample(x = X,
-                                      y = Y,
-                                      list = TRUE)
-
-           X <- upTrain$x
-           Y <- factor(upTrain$y)
+           upTrain <- caret::upSample(x = X, y = Y, list = TRUE)
+           X <- upTrain$x; Y <- factor(upTrain$y)
          },
-
-
-         ## SMOTE
-         "smote" = {
-           message("Smote sampling method selected")
-           mozv <- colnames(X)
-
-           dataSMOTE <- data.frame(Y,X)
-
-           Smoted <- smote_classif(Y~., dataSMOTE, C.perc = "balance")
-
-           X <- Smoted[,-1]
-           X[is.na(X)] <- 0
-
-           colnames(X) = mozv
-           Y <- factor(Smoted$Y)
-         },
-
-         ## Down
          "down" = {
            message("Down sampling method selected")
-           DownTrain <- caret::downSample(x = X,
-                                          y = Y, list = TRUE)
-           X <- DownTrain$x
-           Y <- factor(DownTrain$y)
-         }
-
-  )
-
-
-  # Define the method
-  method <- match.arg(MethodSelection)
-
-  switch(method,
-
-         # RF
-
-         "RFERF" = {
-
-           message("Selection variables with RFE and RF method")
-
-           # define the control using a random forest selection function
-           control <- caret::rfeControl(functions = caret::rfFuncs,
-                                        method = methodValid,
-                                        number = NumberCV,
-                                        repeats = RepeatsCV)
-
-           # run the RFE algorithm
-           resultmodel <- caret::rfe(X,
-                                     Y,
-                                     rfeControl = control,
-                                     sizes = Sizes,
-                                     preProc = PreProcessing,
-                                     metric = Metric)
-
-           #Keeping the peaks giving the best average metric on the folds
-           if (Metric=="Accuracy"){
-             nbv=resultmodel$results$Variables[which.max(resultmodel$results$Accuracy[1:(nrow(resultmodel$results)-1)])]
-           }
-           if (Metric=="Kappa"){
-             nbv=resultmodel$results$Variables[which.max(resultmodel$results$Kappa[1:(nrow(resultmodel$results)-1)])]
-           }
-
-           smoz=unique(resultmodel$variables$var[resultmodel$variables$Variables==nbv])
-
-           results <- (list(result=resultmodel,
-                            "sel_moz" = sort(smoz)))
-
+           downTrain <- caret::downSample(x = X, y = Y, list = TRUE)
+           X <- downTrain$x; Y <- factor(downTrain$y)
          },
-
-         # Logistic regression
-
-         "RFEGlmnet" = {
-
-           message("Selection variables with RFE and Glmnet method")
-
-           # define the control using a glmnet selection function
-           control <- caret::rfeControl(functions = caret::caretFuncs,
-                                        #lrFuncs
-                                        method = methodValid,
-                                        number = NumberCV,
-                                        repeats = RepeatsCV)
-
-           ## Try to fix error task error with specific grid
-           #glmnGrid <- expand.grid(alpha = c(0.05, seq(.1, 1, by = 0.5)),
-           #                       lambda = c(.001, .01, .1, 1))
-
-
-           # run the RFE algorithm
-           MyPerf.rfeglmnet <- try(resultmodel <- caret::rfe(X,
-                                                             Y,
-                                                             rfeControl = control,
-                                                             sizes = Sizes,
-                                                             method = "glmnet",
-                                                             preProc = PreProcessing,
-                                                             metric = Metric), silent = T)#,
-           #tuneGrid = glmnGrid)
-
-           if(is.character(MyPerf.rfeglmnet)){
-             warning("glmnet: error probably due to not enough observations by class, the argument MethodValidation is changed by LOOCV.")
-             control <- caret::rfeControl(functions = caret::caretFuncs,
-                                          #lrFuncs
-                                          method = "LOOCV",
-                                          number = NumberCV,
-                                          repeats = RepeatsCV)
-             resultmodel <- caret::rfe(X,
-                                       Y,
-                                       rfeControl = control,
-                                       sizes = Sizes,
-                                       method = "glmnet",
-                                       preProc = PreProcessing,
-                                       metric = Metric)
-           }
-
-           #Keeping the peaks giving the best average metric on the folds
-           if (Metric=="Accuracy"){
-             nbv=resultmodel$results$Variables[which.max(resultmodel$results$Accuracy[1:(nrow(resultmodel$results)-1)])]
-           }
-           if (Metric=="Kappa"){
-             nbv=resultmodel$results$Variables[which.max(resultmodel$results$Kappa[1:(nrow(resultmodel$results)-1)])]
-           }
-
-           smoz=unique(resultmodel$variables$var[resultmodel$variables$Variables==nbv])
-
-           results <- (list(result=resultmodel,
-                            "sel_moz" = sort(smoz)))
-         },
-
-         #sPLSDA
-         "sPLSDA" = {
-
-           message("Selection variables with sPLSDA method")
-
-           ## Select good method for validation
-           if (MethodValidation == "LOOCV") {methodValid <- "loo"}
-           if (MethodValidation == "LOOCV") {RepeatsCV <- 1}
-           if (MethodValidation == "cv") {methodValid <- "Mfold"}
-           if (MethodValidation == "cv") {RepeatsCV <- 1}
-           if (MethodValidation == "repeatedcv") {methodValid <- "Mfold"}
-           if (MethodValidation == "repeatedcv" & is.null(RepeatsCV)) {RepeatsCV <- 1}
-
-           # Select good method for pre process the data
-           if (length(grep("scale",PreProcessing)) != 0) {SCALEm <- TRUE} else {SCALEm <- FALSE}
-           if (length(grep("nzv",PreProcessing))!= 0) {NZVm <- TRUE} else {NZVm <- FALSE}
-           if (length(grep("corr",PreProcessing)) != 0) {warning("The corr preprocessing method is not used with sPLSDA method")}
-           if (length(grep("center",PreProcessing)) != 0) {warning("The center preprocessing method is not used with sPLSDA method")}
-
-           if (ncomp.max>(nrow(X)-1)){ncomp.max=nrow(X)-1;}
-
-           # Estimate a PLS-DA
-           MyResult.plsda <- mixOmics::plsda(X,
-                                             Y,
-                                             ncomp = ncomp.max,
-                                             scale = SCALEm,
-                                             near.zero.var = NZVm)
-
-           # Perf function from mixOmics package
-           # suggest more for folds and nrepeats
-           MyPerf.plsda <- try(mixOmics::perf(MyResult.plsda,
-                                              validation = methodValid,
-                                              folds = NumberCV,
-                                              nrepeat = RepeatsCV,
-                                              progressBar = FALSE), silent = T)
-
-           if(is.character(MyPerf.plsda)){
-             warning("plsa: the system is singular, the argument MethodValidation is replaced by LOOCV.")
-             while(is.character(MyPerf.plsda)){
-               MyPerf.plsda <- try(mixOmics::perf(MyResult.plsda,
-                                                  validation = "loo",
-                                                  folds = NumberCV,
-                                                  nrepeat = RepeatsCV,
-                                                  progressBar = FALSE), silent = T)
-               ncomp.max=ncomp.max-1;
-               MyResult.plsda <- mixOmics::plsda(X,Y,ncomp = ncomp.max,scale = SCALEm,near.zero.var = NZVm)
-             }
-             MyPerf.plsda <- mixOmics::perf(MyResult.plsda,
-                                            validation = "loo",
-                                            folds = NumberCV,
-                                            nrepeat = RepeatsCV,
-                                            progressBar = FALSE)
-             warning(paste0(c("plsa: the system is singular, the maximal number of components is replaced by ",ncomp.max,"."),collapse=""))
-           }
-
-
-           # Keep optimal number of components for sPLS-DA
-           adiff = abs(diff(as.numeric(MyPerf.plsda$error.rate$BER[,1]))) > threshold
-           k = 1
-           while(isTRUE(adiff[k])){k = k+1;}
-           ncomp <- k
-           if (ncomp<2){ncomp=2;}
-
-           # tune sPLS-DA to find optimal parameters
-           tune.splsda.srbct <- try(mixOmics::tune.splsda(X,Y, ncomp = ncomp,
-                                                          validation = methodValid,
-                                                          folds = NumberCV,
-                                                          dist = "max.dist",
-                                                          progressBar = FALSE,
-                                                          measure = "BER",
-                                                          test.keepX = Sizes), silent = TRUE)
-           if(is.character(tune.splsda.srbct)){
-             warning("splsa: the system is singular, the argument MethodValidation is changed by LOOCV.")
-
-             tune.splsda.srbct <- mixOmics::tune.splsda(X,Y, ncomp = ncomp,
-                                                        validation = "loo",
-                                                        folds = NumberCV,
-                                                        dist = "max.dist",
-                                                        progressBar = FALSE,
-                                                        measure = "BER",
-                                                        test.keepX = Sizes)
-           }
-
-           # Keep optimal number of mass-over-charge values per components
-           select.keepX <- tune.splsda.srbct$choice.keepX[1:ncomp]
-
-           # Train sPLS-DA model with optimal parameters
-           splsda.train <- mixOmics::splsda(X,
-                                            Y,
-                                            scale = SCALEm,
-                                            ncomp = ncomp,
-                                            keepX = select.keepX,
-                                            near.zero.var = NZVm)
-
-           ## Keep best parameters
-           comp = ncomp
-           data_splsda = splsda.train
-
-           ## Vector of components in the model
-           compo <- seq(1:comp)
-
-           ## loop to collect the data
-           cp <- list() # Empty list
-           variables_keep <- list() # Empty list
-
-           ## loop to extract variable for each component
-
-           for (i in 1:length(compo)){
-
-             ## Keep the data plot
-             cp[[i]] <- mixOmics::plotLoadings(data_splsda, comp = compo[[i]],
-                                               title = paste("comp",compo[[i]], sep = "_"),
-                                               contrib = 'max', method = 'mean', plot=FALSE)
-
-             ## Extract variable in in a vector for each cp
-             variables_keep[[i]] <- data.frame(X_var = row.names(cp[[i]]),
-                                               Group = cp[[i]]$GroupContrib,
-                                               Importance = cp[[i]]$importance)
-
-           }
-
-           ## Rename variable
-           names(cp) <- paste("comp_raw", compo, sep = "_")
-           names(variables_keep) <- paste("comp", compo, sep = "_")
-
-           ## Remove doublons
-           UniqueVariables_keep <- do.call("rbind", variables_keep)
-           UniqueVariables_keep <- UniqueVariables_keep[!duplicated(UniqueVariables_keep[,1]),]
-
-           ## Results
-           # Final selection of discriminant mass-over-charge values
-           results <- list("Raw_data" = cp,
-                           "selected_variables" = UniqueVariables_keep,
-                           "sel_moz" = sort(UniqueVariables_keep$X_var))
-
-         },
-
-         # VSURF
-
-         "VSURF" = {
-
-           message("Selection variables with VSURF method")
-           resultsmodel <- VSURF::VSURF(x=X, y=Y, ntree = Ntree,
-                                        nfor.thres = 50,
-                                        nfor.interp = 50,
-                                        nfor.pred = 50, nsd=100)
-
-           Vectormoz <- resultsmodel[["varselect.pred"]]
-           sel_moz <- colnames(X)[Vectormoz]
-
-           results <- (list(result=resultsmodel,
-                            sel_moz=sort(sel_moz)))
-         },
-
-         # mda
-
-         "mda" = {
-           message("Selection variables with mda method")
-           if (nbf>0){
-             #creating false peaks to get enough variables with negative importances
-             X0=matrix(stats::runif(n = nbf*nrow(X),min = min(X), max = max(X)),nrow = nrow(X),ncol=nbf)
-             colnames(X0)=paste("false_",1:ncol(X0),sep="")
-             #Adding them to X
-             Xn=cbind(X,X0);
-           }else{Xn=X;}
-           #Estimating random forests
-           rf = randomForest::randomForest(x = Xn, Y, ntree = Ntree,
-                                           mtry = floor(sqrt(ncol(X))), importance = TRUE, keep.forest = F)
-           vi = randomForest::importance(rf, type = 1, scale = FALSE)
-
-           if (nbf>0){
-             #Deleting false with positive importances
-             vi1 = c(vi[1:ncol(X)],
-                     vi[(ncol(X)+1):length(vi)][which(vi[(ncol(X)+1):length(vi)]<0)])
-             names(vi1)=c(rownames(vi)[1:ncol(X)],rownames(vi[(ncol(X)+1):length(vi)][which(vi[(ncol(X)+1):length(vi)]<0)]))
-           }else{vi1 = c(vi[1:ncol(X)]);names(vi1)=rownames(vi)[1:ncol(X)];}
-           Fall = stats::ecdf(vi1)
-           imp_neg = vi1[which(vi1 < 0)]
-           #Creating distribution under the null by the opposite of negative importances
-           imp_null = c(imp_neg, -imp_neg)
-           #Estimating pi0 for different quantile values of the null
-           q_ext = seq(0.75, 1, by = 0.01)
-           pi0 = NULL
-           for (i in q_ext) {
-             qin = stats::quantile(imp_null, i)
-             pi0 = c(pi0, min(Fall(qin)/i, 1))
-           }
-           if (nbf>0){
-             Nfn=sum(vi1[(ncol(X)+1):length(vi1)]<0)
-             #Reajusting the estimation on the set of true peaks
-             pi0f = (min(pi0)*(ncol(X)+Nfn)-Nfn)/ncol(X)
-           }else{pi0f = min(pi0);}
-           #Results
-           nb_to_sel = floor(ncol(X) * (1 - pi0f))
-           sel_moz = names(vi1[1:ncol(X)])[sort(-vi1[1:ncol(X)], index.return = TRUE)$ix][1:nb_to_sel]
-           imp_sel = vi1[which(names(vi1) %in% sel_moz)]
-           results <- list("nb_to_sel" = nb_to_sel,
-                           "sel_moz" = sel_moz,
-                           "imp_sel" = imp_sel)
-         },
-
-         "cvp" = {
-           message("Selection variables with cvp method")
-           if (is.null(NumberCV)){NumberCV=2;}
-
-           if (nbf>0){
-             #creating false peaks to get enough variables with negative importances
-             X0=matrix(runif(n = nbf*nrow(X),min = min(X), max = max(X)),nrow = nrow(X),ncol=nbf)
-             colnames(X0)=paste("false_",1:ncol(X0),sep="")
-             #Adding them to X
-             Xn=cbind(X,X0)
-           }else{Xn=X;}
-
-           cv_vi = vita::CVPVI(Xn, as.numeric(Y), k = NumberCV, ntree = Ntree,
-                               ncores = ncores)
-           vi = cv_vi$cv_varim
-           if (nbf>0){
-             #Deleting false with positive importances
-             vi1 = c(vi[1:ncol(X)],
-                     vi[(ncol(X)+1):length(vi)][which(vi[(ncol(X)+1):length(vi)]<0)])
-             names(vi1)=c(rownames(vi)[1:ncol(X)],rownames(vi[(ncol(X)+1):length(vi)][which(vi[(ncol(X)+1):length(vi)]<0)]))
-           }else{vi1 = c(vi[1:ncol(X)]);names(vi1)=rownames(vi)[1:ncol(X)];}
-           Fall = stats::ecdf(vi1)
-           imp_neg = vi1[which(vi1 < 0)]
-           #Creating distribution under the null by the opposite of negative importances
-           imp_null = c(imp_neg, -imp_neg)
-           q_ext = seq(0.75, 1, by = 0.01)
-           pi0 = NULL
-           for (i in q_ext) {
-             qin = stats::quantile(imp_null, i)
-             pi0 = c(pi0, min(Fall(qin)/i, 1))
-           }
-           if (nbf>0){
-             Nfn=sum(vi1[(ncol(X)+1):length(vi1)]<0)
-             pi0f = (min(pi0)*(ncol(X)+Nfn)-Nfn)/ncol(X)
-           }else{pi0f = min(pi0);}
-           nb_to_sel = floor(ncol(X) * (1 - pi0f))
-           sel_moz = names(vi1[1:ncol(X)])[sort(-vi1[1:ncol(X)], index.return = TRUE)$ix][1:nb_to_sel]
-           imp_sel = vi1[which(names(vi1) %in% sel_moz)]
-           results <- list("nb_to_sel" = nb_to_sel,
-                           "sel_moz" = sel_moz,
-                           "imp_sel" = imp_sel)
-         },
-
-         "boruta" ={
-           message("Selection variables with Boruta method")
-
-           e<- Boruta::Boruta(x=X,y=Y,maxRuns=3*ncol(X))
-           sel_moz=colnames(X)[e$finalDecision=="Confirmed"]
-           nb_to_sel=length(sel_moz)
-           results <- list("nb_to_sel" = nb_to_sel,
-                           "sel_moz" = sel_moz)
+         "smote" = {
+           message("Smote sampling method selected (internal smote_classif)")
+           mozv <- colnames(X)
+           dataSMOTE <- data.frame(Y = Y, X, check.names = FALSE)
+           Smoted <- smote_classif(Y ~ ., dataSMOTE, C.perc = "balance")
+           X <- as.matrix(Smoted[, -1, drop = FALSE]); X[is.na(X)] <- 0; colnames(X) <- mozv
+           Y <- factor(Smoted$Y)
          }
   )
+
+  # 4) Methods
+  results <- switch(method,
+
+                    "RFERF" = {
+                      if (missing(Sizes) || length(Sizes) == 0L)
+                        stop("Sizes must be provided for RFERF.", call. = FALSE)
+                      message("Selection variables with RFE and RF method")
+                      control <- caret::rfeControl(functions = caret::rfFuncs,
+                                                   method = methodValid,
+                                                   number = NumberCV,
+                                                   repeats = RepeatsCV)
+                      resultmodel <- caret::rfe(X, Y,
+                                                rfeControl = control,
+                                                sizes = Sizes,
+                                                preProc = PreProcessing,
+                                                metric = Metric)
+                      nbv <- if (Metric == "Accuracy") {
+                        resultmodel$results$Variables[which.max(resultmodel$results$Accuracy[1:(nrow(resultmodel$results) - 1)])]
+                      } else {
+                        resultmodel$results$Variables[which.max(resultmodel$results$Kappa[1:(nrow(resultmodel$results) - 1)])]
+                      }
+                      smoz <- unique(resultmodel$variables$var[resultmodel$variables$Variables == nbv])
+                      list(result = resultmodel, sel_moz = sort(smoz))
+                    },
+
+                    "RFEGlmnet" = {
+                      if (missing(Sizes) || length(Sizes) == 0L)
+                        stop("Sizes must be provided for RFEGlmnet.", call. = FALSE)
+                      message("Selection variables with RFE and Glmnet method")
+                      control <- caret::rfeControl(functions = caret::caretFuncs,
+                                                   method = methodValid,
+                                                   number = NumberCV,
+                                                   repeats = RepeatsCV)
+                      MyPerf.rfeglmnet <- try(
+                        resultmodel <- caret::rfe(X, Y,
+                                                  rfeControl = control,
+                                                  sizes = Sizes,
+                                                  method = "glmnet",
+                                                  preProc = PreProcessing,
+                                                  metric = Metric),
+                        silent = TRUE
+                      )
+                      if (inherits(MyPerf.rfeglmnet, "try-error")) {
+                        warning("glmnet: fallback to LOOCV due to an error.")
+                        control <- caret::rfeControl(functions = caret::caretFuncs, method = "LOOCV")
+                        resultmodel <- caret::rfe(X, Y,
+                                                  rfeControl = control,
+                                                  sizes = Sizes,
+                                                  method = "glmnet",
+                                                  preProc = PreProcessing,
+                                                  metric = Metric)
+                      }
+                      nbv <- if (Metric == "Accuracy") {
+                        resultmodel$results$Variables[which.max(resultmodel$results$Accuracy[1:(nrow(resultmodel$results) - 1)])]
+                      } else {
+                        resultmodel$results$Variables[which.max(resultmodel$results$Kappa[1:(nrow(resultmodel$results) - 1)])]
+                      }
+                      smoz <- unique(resultmodel$variables$var[resultmodel$variables$Variables == nbv])
+                      list(result = resultmodel, sel_moz = sort(smoz))
+                    },
+
+                    "sPLSDA" = {
+                      if (missing(Sizes) || length(Sizes) == 0L)
+                        stop("Sizes must be provided (test.keepX grid) for sPLSDA.", call. = FALSE)
+                      message("Selection variables with sPLSDA method")
+
+                      # Map validation for mixOmics
+                      vali <- if (methodValid == "LOOCV") "loo" else "Mfold"
+                      nrep <- if (methodValid == "repeatedcv") if (is.null(RepeatsCV)) 1L else RepeatsCV else 1L
+
+                      SCALEm <- "scale" %in% PreProcessing
+                      NZVm <- "nzv" %in% PreProcessing
+                      if ("corr" %in% PreProcessing) warning("The 'corr' preprocessing method is not used with sPLSDA.")
+                      if ("center" %in% PreProcessing) warning("The 'center' preprocessing method is not used with sPLSDA.")
+
+                      ncomp.max <- min(ncomp.max, max(1L, nrow(X) - 1L))
+                      MyResult.plsda <- mixOmics::plsda(X, Y, ncomp = ncomp.max, scale = SCALEm, near.zero.var = NZVm)
+
+                      MyPerf.plsda <- try(
+                        mixOmics::perf(MyResult.plsda, validation = vali, folds = NumberCV, nrepeat = nrep, progressBar = FALSE),
+                        silent = TRUE
+                      )
+                      if (inherits(MyPerf.plsda, "try-error")) {
+                        warning("plsda: fallback to LOOCV due to singular system.")
+                        ok <- FALSE
+                        while (!ok && ncomp.max > 1) {
+                          ncomp.max <- ncomp.max - 1
+                          MyResult.plsda_k <- mixOmics::plsda(X, Y, ncomp = ncomp.max, scale = SCALEm, near.zero.var = NZVm)
+                          tst <- try(mixOmics::perf(MyResult.plsda_k, validation = "loo",
+                                                    folds = NumberCV, nrepeat = 1L, progressBar = FALSE),
+                                     silent = TRUE)
+                          ok <- !inherits(tst, "try-error")
+                          if (ok) MyPerf.plsda <- tst
+                        }
+                      }
+
+                      adiff <- abs(diff(as.numeric(MyPerf.plsda$error.rate$BER[, 1]))) > threshold
+                      k <- 1L
+                      while (k <= length(adiff) && isTRUE(adiff[k])) k <- k + 1L
+                      ncomp <- max(2L, k)
+
+                      tune.splsda.srbct <- try(
+                        mixOmics::tune.splsda(X, Y, ncomp = ncomp, validation = vali, folds = NumberCV,
+                                              dist = "max.dist", progressBar = FALSE, measure = "BER",
+                                              test.keepX = Sizes),
+                        silent = TRUE
+                      )
+                      if (inherits(tune.splsda.srbct, "try-error")) {
+                        warning("splsda: fallback to LOOCV during tuning due to singular system.")
+                        tune.splsda.srbct <- mixOmics::tune.splsda(X, Y, ncomp = ncomp, validation = "loo", folds = NumberCV,
+                                                                   dist = "max.dist", progressBar = FALSE, measure = "BER",
+                                                                   test.keepX = Sizes)
+                      }
+
+                      select.keepX <- tune.splsda.srbct$choice.keepX[1:ncomp]
+                      splsda.train <- mixOmics::splsda(X, Y, scale = SCALEm, ncomp = ncomp, keepX = select.keepX, near.zero.var = NZVm)
+
+                      compo <- seq_len(ncomp)
+                      cp <- vector("list", length(compo))
+                      variables_keep <- vector("list", length(compo))
+                      for (i in seq_along(compo)) {
+                        cp[[i]] <- mixOmics::plotLoadings(splsda.train, comp = compo[[i]],
+                                                          title = paste("comp", compo[[i]], sep = "_"),
+                                                          contrib = "max", method = "mean", plot = FALSE)
+                        variables_keep[[i]] <- data.frame(
+                          X_var = row.names(cp[[i]]),
+                          Group = cp[[i]]$GroupContrib,
+                          Importance = cp[[i]]$importance,
+                          stringsAsFactors = FALSE
+                        )
+                      }
+                      names(cp) <- paste0("comp_raw_", compo)
+                      names(variables_keep) <- paste0("comp_", compo)
+                      UniqueVariables_keep <- do.call("rbind", variables_keep)
+                      UniqueVariables_keep <- UniqueVariables_keep[!duplicated(UniqueVariables_keep[, 1]), , drop = FALSE]
+
+                      list(Raw_data = cp,
+                           selected_variables = UniqueVariables_keep,
+                           sel_moz = sort(UniqueVariables_keep$X_var))
+                    },
+
+                    "VSURF" = {
+                      message("Selection variables with VSURF method")
+                      resultsmodel <- VSURF::VSURF(x = X, y = Y, ntree = Ntree,
+                                                   nfor.thres = 50, nfor.interp = 50, nfor.pred = 50, nsd = 100)
+                      sel_moz <- colnames(X)[resultsmodel[["varselect.pred"]]]
+                      list(result = resultsmodel, sel_moz = sort(sel_moz))
+                    },
+
+                    "mda" = {
+                      message("Selection variables with mda method")
+                      if (requireNamespace("ranger", quietly = TRUE)) {
+                        return(fast_mda(X, Y, ntree = Ntree, nbf = nbf, nthreads = ncores_eff, seed = 123))
+                      }
+                      if (!requireNamespace("randomForest", quietly = TRUE))
+                        stop("Method 'mda' requires 'ranger' (preferred) or 'randomForest'.", call. = FALSE)
+
+                      # Fallback: randomForest (single-threaded)
+                      if (nbf > 0) {
+                        X0 <- matrix(stats::runif(nbf * nrow(X), min = min(X), max = max(X)), nrow(X), nbf)
+                        colnames(X0) <- paste0("false_", seq_len(ncol(X0)))
+                        Xn <- cbind(X, X0)
+                      } else Xn <- X
+
+                      rf <- randomForest::randomForest(x = Xn, y = Y, ntree = Ntree,
+                                                       mtry = max(1L, floor(sqrt(ncol(X)))), importance = TRUE, keep.forest = FALSE)
+                      vi_mat <- randomForest::importance(rf, type = 1, scale = FALSE)
+                      vi_vec <- if (is.matrix(vi_mat)) setNames(as.numeric(vi_mat[, ncol(vi_mat)]), rownames(vi_mat)) else vi_mat
+                      vi_vec[!is.finite(vi_vec)] <- 0
+
+                      if (nbf > 0) {
+                        vi_true <- vi_vec[colnames(X)]
+                        vi_false_neg <- vi_vec[!names(vi_vec) %in% colnames(X)]
+                        vi_false_neg <- vi_false_neg[is.finite(vi_false_neg) & vi_false_neg < 0]
+                        vi1 <- c(vi_true, vi_false_neg)
+                      } else {
+                        vi1 <- vi_vec[colnames(X)]
+                      }
+
+                      imp_neg <- vi1[vi1 < 0]
+                      if (length(imp_neg) == 0L) {
+                        pi0f <- 0
+                      } else {
+                        imp_null <- c(imp_neg, -imp_neg)
+                        q_ext <- seq(0.75, 1, by = 0.01)
+                        Fall <- stats::ecdf(vi1)
+                        pi0_raw <- vapply(q_ext, function(q) {
+                          qin <- stats::quantile(imp_null, q, na.rm = TRUE); min(Fall(qin) / q, 1)
+                        }, numeric(1))
+                        if (nbf > 0) {
+                          Nfn <- sum(vi_false_neg < 0)
+                          pi0f <- (min(pi0_raw) * (ncol(X) + Nfn) - Nfn) / ncol(X)
+                        } else {
+                          pi0f <- min(pi0_raw)
+                        }
+                      }
+
+                      nb_to_sel <- max(1L, floor(ncol(X) * (1 - pi0f)))
+                      vi_true_only <- vi1[colnames(X)]
+                      sel_moz <- names(vi_true_only)[order(-vi_true_only)][seq_len(nb_to_sel)]
+                      imp_sel <- vi_true_only[sel_moz]
+                      list(nb_to_sel = nb_to_sel, sel_moz = sel_moz, imp_sel = imp_sel)
+                    },
+
+                    "cvp" = {
+                      message("Selection variables with cvp method")
+                      if (is.null(NumberCV)) NumberCV <- 5L
+                      if (requireNamespace("ranger", quietly = TRUE)) {
+                        return(fast_cvpvi(X, Y, k = NumberCV, ntree = Ntree, nbf = nbf, nthreads = ncores_eff, seed = 123))
+                      }
+                      if (!requireNamespace("vita", quietly = TRUE))
+                        stop("Method 'cvp' requires 'ranger' (preferred) or 'vita'.", call. = FALSE)
+
+                      # Fallback: vita::CVPVI (cap ncores)
+                      if (nbf > 0) {
+                        X0 <- matrix(stats::runif(nbf * nrow(X), min = min(X), max = max(X)), nrow(X), nbf)
+                        colnames(X0) <- paste0("false_", seq_len(ncol(X0)))
+                        Xn <- cbind(X, X0)
+                      } else Xn <- X
+
+                      cv_vi <- vita::CVPVI(Xn, as.numeric(Y), k = NumberCV, ntree = Ntree, ncores = ncores_eff)
+                      vi <- as.numeric(cv_vi$cv_varim[, 1L]); names(vi) <- rownames(cv_vi$cv_varim)
+                      vi[!is.finite(vi)] <- 0
+
+                      if (nbf > 0) {
+                        vi_true <- vi[colnames(X)]
+                        vi_false_neg <- vi[!names(vi) %in% colnames(X)]
+                        vi_false_neg <- vi_false_neg[is.finite(vi_false_neg) & vi_false_neg < 0]
+                        vi1 <- c(vi_true, vi_false_neg)
+                      } else {
+                        vi1 <- vi[colnames(X)]
+                      }
+
+                      imp_neg <- vi1[vi1 < 0]
+                      if (length(imp_neg) == 0L) {
+                        pi0f <- 0
+                      } else {
+                        imp_null <- c(imp_neg, -imp_neg)
+                        q_ext <- seq(0.75, 1, by = 0.01)
+                        Fall <- stats::ecdf(vi1)
+                        pi0_raw <- vapply(q_ext, function(q) {
+                          qin <- stats::quantile(imp_null, q, na.rm = TRUE); min(Fall(qin) / q, 1)
+                        }, numeric(1))
+                        if (nbf > 0) {
+                          Nfn <- sum(vi_false_neg < 0)
+                          pi0f <- (min(pi0_raw) * (ncol(X) + Nfn) - Nfn) / ncol(X)
+                        } else {
+                          pi0f <- min(pi0_raw)
+                        }
+                      }
+
+                      nb_to_sel <- max(1L, floor(ncol(X) * (1 - pi0f)))
+                      vi_true_only <- vi1[colnames(X)]
+                      sel_moz <- names(vi_true_only)[order(-vi_true_only)][seq_len(nb_to_sel)]
+                      imp_sel <- vi_true_only[sel_moz]
+                      list(nb_to_sel = nb_to_sel, sel_moz = sel_moz, imp_sel = imp_sel)
+                    },
+
+                    "boruta" = {
+                      message("Selection variables with Boruta method")
+                      e <- Boruta::Boruta(x = X, y = Y, maxRuns = 3 * ncol(X))
+                      sel_moz <- colnames(X)[e$finalDecision == "Confirmed"]
+                      list(nb_to_sel = length(sel_moz), sel_moz = sel_moz)
+                    }
+  )
+
   return(results)
 }
